@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, ForeignKey, JSON, TIMESTAMP
 from app.database import Base
+from datetime import datetime, timezone
 
 class OrderAudit(Base):
     __tablename__ = "order_audit"
@@ -10,4 +11,4 @@ class OrderAudit(Base):
     old_data = Column(JSON)
     new_data = Column(JSON)
     changed_by = Column(Integer)
-    date = Column(TIMESTAMP)
+    date = Column(TIMESTAMP, default=datetime.now(timezone.utc))

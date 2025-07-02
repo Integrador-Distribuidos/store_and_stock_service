@@ -4,7 +4,7 @@ from datetime import datetime
 
 class OrderAuditBase(BaseModel):
     id_order: int
-    operation: int
+    operation: str
     old_data: Optional[dict]
     new_data: Optional[dict]
     changed_by: int
@@ -14,4 +14,4 @@ class OrderAuditOut(OrderAuditBase):
     id_order_audit: int
 
     class Config:
-        orm_mode = True
+        from_attribute = True
