@@ -14,6 +14,7 @@ class ProductStockOutInfo(BaseModel):
 
 class ProductCreate(BaseModel):
     name: str
+    image: str
     description: str
     price: float
     sku: str
@@ -23,6 +24,7 @@ class ProductCreate(BaseModel):
 class ProductOut(BaseModel):
     id_product: int
     name: str
+    image: str
     description: str
     price: float
     sku: str
@@ -36,6 +38,7 @@ class ProductOut(BaseModel):
 
 class ProductUpdate(BaseModel):
     name: Optional[str]
+    image: Optional[str]
     description: Optional[str]
     price: Optional[float]
     sku: Optional[str]

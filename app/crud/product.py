@@ -42,6 +42,7 @@ def get_all_products_with_stock(db: Session, skip: int = 0, limit: int = 100):
         {
             "id_product": p.id_product,
             "name": p.name,
+            "image": p.image,
             "description": p.description,
             "price": p.price,
             "sku": p.sku,
@@ -68,6 +69,7 @@ def get_product(db: Session, product_id: int):
     return {
         "id_product": product.id_product,
         "name": product.name,
+        "image": product.image,
         "description": product.description,
         "price": product.price,
         "sku": product.sku,
