@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
-from datetime import date
-from typing import Optional, List
+from datetime import date, datetime
+from typing import Optional, List, Dict, Any
 # ---------- PRODUCT ----------
 class ProductStockInfo(BaseModel):
     id_stock: int
@@ -19,16 +19,18 @@ class ProductCreate(BaseModel):
     price: float
     sku: str
     category: str
+    quantity: Optional[int] = []
     creation_date: date
 
 class ProductOut(BaseModel):
     id_product: int
     name: str
-    image: str
+    image: Optional[str] = []
     description: str
     price: float
     sku: str
     category: str
+    quantity: Optional[int] = []
     stocks: Optional[List[ProductStockInfo]] = []
     creation_date: date
 
@@ -43,6 +45,7 @@ class ProductUpdate(BaseModel):
     price: Optional[float]
     sku: Optional[str]
     category: Optional[str]
+    quantity: Optional[int]
     creation_date: Optional[date]
     stocks: Optional[List[ProductStockInfo]]=None
 
@@ -62,3 +65,17 @@ class ProductStockOut(BaseModel):
     id_stock: int
     quantity: int
     last_update_date: date
+
+
+
+class ProductAuditOut(BaseModel):
+    id_movement_audit: int
+    id_movement: int
+    operation: str
+    old_data: Optional[dict[str, Any]]
+    new_data: Optional[dict[str, Any]]
+    changed_by: int
+    date: datetime
+
+    class Config:
+        orm_mode = True

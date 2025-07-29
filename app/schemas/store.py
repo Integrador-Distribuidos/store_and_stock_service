@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import date
+from typing import Optional
 
 class StoreCreate(BaseModel):
     name: str
@@ -14,6 +15,7 @@ class StoreCreate(BaseModel):
 
 class StoreOut(StoreCreate):
     id_store: int
+    image: Optional[str] = []
 
     class Config:
         orm_mode = True

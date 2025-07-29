@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.crud import stock as crud
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException
+from app.models import stock_audit
 from app import database
 
 router = APIRouter(prefix="/api")
@@ -52,3 +53,8 @@ def update_stock(id: int, stock: schemas.StockCreate, db: Session = Depends(get_
 @router.delete("/stocks/{id}", response_model=schemas.StockOut)
 def delete_stock(id: int, db: Session = Depends(get_db)):
     return crud.delete_stock(db, id)
+
+#Exibir auditoria
+@router.get("/auditoria/stocks")
+def listar_auditorias(db: Session = Depends(get_db)):
+    return db.query(stock_audit.StockAudit).all()

@@ -1,8 +1,12 @@
 from sqlalchemy.orm import Session
 from app.models import models
+from app.utils.file_utils import save_upload_file, validate_file, UPLOAD_FOLDER
 from app.schemas import product as schemas
-from fastapi import HTTPException
-from datetime import date
+from fastapi import HTTPException, UploadFile, File
+from app.utils import audit
+from sqlalchemy import inspect, null
+import os
+import shutil
 # -----------------------
 # CRUD de Produto
 # -----------------------
@@ -11,6 +15,15 @@ def create_product(db: Session, product: schemas.ProductCreate):
     db_product = models.Product(**product.model_dump())
     db.add(db_product)
     db.commit()
+
+    audit.product_audit_(
+    db=db,
+    id_product=db_product.id_product,
+    operation="CREATE",
+    old_data={},
+    new_data=audit.obtain_data(db_product),
+    changed_by=1 #Substituir pelo id do usuário
+)
     db.refresh(db_product)
     return db_product
 
@@ -47,13 +60,12 @@ def get_all_products_with_stock(db: Session, skip: int = 0, limit: int = 100):
             "price": p.price,
             "sku": p.sku,
             "category": p.category,
+            "quantity": p.quantity,
             "creation_date": p.creation_date,
             "stocks": stock_map.get(p.id_product, [])
         }
         for p in products
     ]
-
-
 
 def get_product(db: Session, product_id: int):
     product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
@@ -74,6 +86,7 @@ def get_product(db: Session, product_id: int):
         "price": product.price,
         "sku": product.sku,
         "category": product.category,
+        "quantity":product.quantity,
         "creation_date": product.creation_date,
         "stocks": [
             {"id_stock": s.id_stock, "quantity": s.quantity}
@@ -81,11 +94,12 @@ def get_product(db: Session, product_id: int):
         ]
     }
 
-
 def update_product(db: Session, product_id: int, product_data: schemas.ProductUpdate):
     product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail=f"Produto com ID {product_id} não encontrado")
+    
+    old_data = audit.obtain_data(product)
 
     # Atualiza só os campos que vieram no JSON (diferentes de None)
     update_data = product_data.model_dump(exclude_unset=True)
@@ -94,17 +108,39 @@ def update_product(db: Session, product_id: int, product_data: schemas.ProductUp
         if hasattr(product, field):
             setattr(product, field, value)
 
+    new_data = audit.obtain_data(product)
+        
+    audit.product_audit_(
+        db=db,
+        id_product=product_id,
+        operation="UPDATE",
+        old_data=old_data,
+        new_data=new_data,
+        changed_by=1 #modificar com o id do usuário de alteração
+    )
+
     db.commit()
     db.refresh(product)
     return product
-
-
 
 def delete_product(db: Session, product_id: int):
     product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail=f"Produto com ID {product_id} não encontrado")
+    
+    old_data = audit.obtain_data(product)
+
+    audit.product_audit_(
+        db=db,
+        id_product=product_id,
+        operation="DELETE",
+        old_data=old_data,
+        new_data={},
+        changed_by=1 #modificar com o id do usuário de alteração
+    )
         # Apagar registros relacionados em product_stock
+        # Captura o estado anterior (deepcopy é opcional, mas evita mutações futuras)
+
     db.query(models.ProductStock).filter(models.ProductStock.id_product == product_id).delete()
     db.query(models.StockMovement).filter(models.StockMovement.id_product == product_id).delete()
     try:
@@ -115,3 +151,31 @@ def delete_product(db: Session, product_id: int):
         raise HTTPException(status_code=400, detail=f"Could not delete product: {str(e)}")
     return {"detail": "Produto  deletado"}
 
+def upload_product_image(product_id: int, db: Session, file: UploadFile):
+    product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    
+    old_data = audit.obtain_data(product)
+    
+    old_image = product.image or ""
+
+
+    ext = validate_file(file)
+    filename = f"product_{product_id}.{ext}"
+    filepath = save_upload_file(upload_file=file, folder=UPLOAD_FOLDER,filename=filename, old_image=old_image)
+
+    product.image = filename
+    db.commit()
+
+    new_data = audit.obtain_data(product)
+    audit.product_audit_(
+        db=db,
+        id_product=product_id,
+        operation="UPDATE_IMAGE",
+        old_data=old_data,
+        new_data=new_data,
+        changed_by=1  # Substitua pelo ID real do usuário
+    )
+
+    return {"message": "Imagem enviada com sucesso", "filename": filename}

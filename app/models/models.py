@@ -4,11 +4,12 @@ class Product(Base):
     __tablename__ = "product"
     id_product = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    image = Column(String, index=True)
+    image = Column(String)
     description = Column(String, index=True)
     price = Column(Float, index=True)
     sku = Column(String, index=True)
     category = Column(String, index=True)
+    quantity = Column(Integer, index=True)
     creation_date = Column(Date, nullable=False)
 
 class StockMovement(Base):
