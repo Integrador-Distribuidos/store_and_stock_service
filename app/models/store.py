@@ -14,3 +14,4 @@ class Store(Base):
     creation_date = Column(Date, nullable=False)
     email = Column(String, nullable=False, unique=True)
     phone_number = Column(String, nullable=False)
+    image = Column(String)

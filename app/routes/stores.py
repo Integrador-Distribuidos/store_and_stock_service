@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException, Path, status, APIRouter
-
+from fastapi import FastAPI, Depends, HTTPException, Path, status, APIRouter, UploadFile, File
 from app.database import Base, engine
 from app.models import store, order, order_item
 from app.schemas.store import StoreCreate, StoreOut
 from app.database import get_db
+from app.utils.file_utils import save_upload_file, validate_file, UPLOAD_FOLDER
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -73,3 +73,21 @@ def delete_store(id: int, db: Session = Depends(get_db)):
     db.delete(store_obj)
     db.commit()
     return
+
+@router.post("/api/stores/{store_id}/upload-image/")
+def upload_store_image(store_id: int, db: Session = Depends(get_db), file: UploadFile = File(...)):
+    stores = db.query(store.Store).filter(store.Store.id_store == store_id).first()
+    if not stores:
+        raise HTTPException(status_code=404, detail="Loja não encontrada")
+    
+    old_image = stores.image or ""
+
+    ext = validate_file(file)
+    filename = f"store_{store_id}.{ext}"
+    filepath = save_upload_file(upload_file=file, folder=UPLOAD_FOLDER, filename=filename, old_image=old_image)
+
+    stores.image = filename
+
+    db.commit()
+
+    return {"message": "Imagem enviada com sucesso", "filename": filename}

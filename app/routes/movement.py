@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.schemas import movement as schemas
 from fastapi import APIRouter, Depends, HTTPException
 from app import database
+from app.models import stock_movement_audit
 router = APIRouter(prefix="/api")
 
 def get_db():
@@ -45,3 +46,10 @@ def read_movements_by_product(id: int, db: Session = Depends(get_db)):
     if not movement:
         raise HTTPException(status_code=404, detail="Movementação não Encontrada")
     return movement
+
+
+
+
+@router.get("/auditoria/movements")
+def listar_auditorias(db: Session = Depends(get_db)):
+    return db.query(stock_movement_audit.StockMovementAudit).all()
