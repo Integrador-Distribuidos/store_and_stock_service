@@ -14,7 +14,7 @@ class ProductStockOutInfo(BaseModel):
 
 class ProductCreate(BaseModel):
     name: str
-    image: str
+    image: Optional[str] = []
     description: str
     price: float
     sku: str
@@ -22,15 +22,8 @@ class ProductCreate(BaseModel):
     quantity: Optional[int] = []
     creation_date: date
 
-class ProductOut(BaseModel):
+class ProductOut(ProductCreate):
     id_product: int
-    name: str
-    image: Optional[str] = []
-    description: str
-    price: float
-    sku: str
-    category: str
-    quantity: Optional[int] = []
     stocks: Optional[List[ProductStockInfo]] = []
     creation_date: date
 
@@ -59,13 +52,11 @@ class ProductStock(BaseModel):
     quantity: int
     last_update_date: date
 
-class ProductStockOut(BaseModel):
+class ProductStockOut(ProductStock):
     id_productstock: int
-    id_product: int
-    id_stock: int
-    quantity: int
-    last_update_date: date
-
+    
+    class Config:
+        orm_mode = True
 
 
 class ProductAuditOut(BaseModel):

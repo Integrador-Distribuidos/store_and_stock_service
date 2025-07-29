@@ -46,10 +46,3 @@ def read_movements_by_product(id: int, db: Session = Depends(get_db)):
     if not movement:
         raise HTTPException(status_code=404, detail="Movementação não Encontrada")
     return movement
-
-
-
-
-@router.get("/auditoria/movements")
-def listar_auditorias(db: Session = Depends(get_db)):
-    return db.query(stock_movement_audit.StockMovementAudit).all()

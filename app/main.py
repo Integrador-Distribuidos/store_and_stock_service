@@ -1,8 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes import movement, product, stock, orders, stores
 from fastapi.staticfiles import StaticFiles
 from app.database import engine, Base
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models import product_audit, stock_audit, stock_movement_audit
 
 app = FastAPI(title="Serviço de Estoques")
 
@@ -30,3 +33,15 @@ app.include_router(movement.router)
 app.include_router(orders.router)
 app.include_router(stores.router)
 
+@app.get("/auditoria/products")
+def listar_auditorias(db: Session = Depends(get_db)):
+    return db.query(product_audit.ProductAudit).all()
+
+#Exibir auditoria
+@app.get("/auditoria/stocks")
+def listar_auditorias(db: Session = Depends(get_db)):
+    return db.query(stock_audit.StockAudit).all()
+
+@app.get("/auditoria/movements")
+def listar_auditorias(db: Session = Depends(get_db)):
+    return db.query(stock_movement_audit.StockMovementAudit).all()

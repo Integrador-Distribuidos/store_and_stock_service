@@ -14,14 +14,8 @@ class StockCreate(BaseModel):
     address: str
     creation_date: date
 
-class StockOut(BaseModel):
+class StockOut(StockCreate):
     id_stock: int
-    name: Optional[str] = None
-    city: Optional[str] = None
-    uf: Optional[str] = None
-    zip_code: Optional[str] = None
-    address: Optional[str] = None
-    creation_date: Optional[date] = None
     products: Optional[List[ProductStockOutInfo]] = []
 
     class Config:

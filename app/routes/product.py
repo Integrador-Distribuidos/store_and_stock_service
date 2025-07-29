@@ -67,14 +67,6 @@ def delete_product(id: int, db: Session = Depends(get_db)):
 def upload_product_image_api(product_id: int,db: Session = Depends(get_db), file: UploadFile = File(...)):
     return crud.upload_product_image(product_id=product_id, db=db, file=file)
 
-@router.get("/products/{product_id}/image-url")
-def get_product_image_url_api(product_id: int, db: Session = Depends(get_db)):
-    return crud.get_product_image_url(product_id=product_id, db=db)
-
-
-@router.get("/auditoria/products")
-def listar_auditorias(db: Session = Depends(get_db)):
-    return db.query(product_audit.ProductAudit).all()
 
 
 
