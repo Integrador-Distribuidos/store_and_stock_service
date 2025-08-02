@@ -6,13 +6,12 @@ from app.database import engine, Base
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import product_audit, stock_audit, stock_movement_audit
+import os
 
 app = FastAPI(title="Serviço de Estoques")
 
-
-# Monta o diretório "images" na rota "/images"
+os.makedirs('images', exist_ok=True)
 app.mount("/images", StaticFiles(directory="images"), name="images")
-
 
 # Habilita CORS
 app.add_middleware(

@@ -14,12 +14,12 @@ class ProductStockOutInfo(BaseModel):
 
 class ProductCreate(BaseModel):
     name: str
-    image: Optional[str] = []
+    image: Optional[str] = ""
     description: str
     price: float
     sku: str
     category: str
-    quantity: Optional[int] = []
+    quantity: Optional[int] = int
     creation_date: date
 
 class ProductOut(ProductCreate):
