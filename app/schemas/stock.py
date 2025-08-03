@@ -7,6 +7,7 @@ class ProductStockOutInfo(BaseModel):
     quantity: int
 # ---------- STOCK ----------
 class StockCreate(BaseModel):
+    id_store: int
     name: str
     city: str
     uf: str

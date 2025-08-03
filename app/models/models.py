@@ -20,7 +20,6 @@ class StockMovement(Base):
     id_stock_destination = Column(Integer)
     quantity = Column(Integer)
     observation = Column(String)
-    movement_type = Column(String)
     creation_date = Column(Date, nullable=False)
 
 class ProductStock(Base):
@@ -34,6 +33,7 @@ class ProductStock(Base):
 class Stock(Base):
     __tablename__ = "stock"
     id_stock = Column(Integer, primary_key=True, index=True)
+    id_store = Column(Integer, index=True)
     name = Column(String, index=True)
     city = Column(String, index=True)
     uf = Column(String, index=True)

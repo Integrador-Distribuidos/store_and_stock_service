@@ -63,6 +63,7 @@ def get_stock(db: Session, stock_id: int):
 
     return schemas.StockOut(
         id_stock=stock.id_stock,
+        id_store=stock.id_store,
         name=stock.name,
         city=stock.city,
         uf=stock.uf,
@@ -89,6 +90,7 @@ def get_all_stocks(db: Session, skip: int = 0, limit: int = 100):
         results.append(
             schemas.StockOut(
                 id_stock=stock.id_stock,
+                id_store=stock.id_store,
                 name=stock.name,
                 city=stock.city,
                 uf=stock.uf,

@@ -8,7 +8,6 @@ class StockMovementCreate(BaseModel):
     id_stock_destination: Optional[int]
     quantity: int
     observation: Optional[str] = None
-    movement_type: str  
     creation_date: date
 
 class StockMovementOut(StockMovementCreate):

@@ -9,13 +9,7 @@ from sqlalchemy import inspect
 
 def create_stock_movement(db: Session, movement: schemas.StockMovementCreate):
     '''
-    transfer: transfere produto de um estoque para outro (sai de um, entra em outro).
-
-in: entrada de produto no estoque (ex: compra, produção).
-
-out: saída de produto do estoque (ex: venda, perda).
-
-Cada tipo define como a quantidade será ajustada nos estoques.
+    Transfere produto de um estoque para outro (sai de um, entra em outro).
     '''
     db_movement = models.StockMovement(**movement.model_dump())
 
@@ -37,11 +31,11 @@ Cada tipo define como a quantidade será ajustada nos estoques.
             .first()
         )
 
-
-
+    if db_movement.id_stock_origin == db_movement.id_stock_destination:
+        raise HTTPException(status_code=406)
 
     # Ações baseadas no tipo de movimentação
-    if db_movement.movement_type == "transfer":
+    if db_movement:
         # Valida origem e destino
         if not origin_stock:
             raise HTTPException(status_code=400, detail="Produto não encontrado no estoque de origem.")
@@ -68,38 +62,6 @@ Cada tipo define como a quantidade será ajustada nos estoques.
         db.flush()
         new_data = serialize_stocks(origin_stock, destination_stock)
         operation = "TRANSFER_STOCKS"
-
-    elif db_movement.movement_type == "in":
-        if not db_movement.id_stock_destination:
-            raise HTTPException(status_code=400, detail="Estoque de destino obrigatório para entrada.")
-        old_data = serialize_stocks(origin=None, destination=destination_stock)
-        if destination_stock:
-            destination_stock.quantity += db_movement.quantity
-            destination_stock.last_update_date = date.today()
-        else:
-            destination_stock = models.ProductStock(
-                id_product=db_movement.id_product,
-                id_stock=db_movement.id_stock_destination,
-                quantity=db_movement.quantity,
-                last_update_date=date.today()
-            )
-            db.add(destination_stock)
-        db.flush()
-        new_data = serialize_stocks(origin=None, destination=destination_stock)
-        operation = 'IN_STOCKS'
-
-    elif db_movement.movement_type == "out":
-        if not origin_stock:
-            raise HTTPException(status_code=400, detail="Produto não encontrado no estoque de origem para saída.")
-        if origin_stock.quantity < db_movement.quantity:
-            raise HTTPException(status_code=400, detail="Estoque insuficiente para saída.")
-        old_data = serialize_stocks(origin_stock, destination=None)
-        origin_stock.quantity -= db_movement.quantity
-        origin_stock.last_update_date = date.today()
-        db.flush()
-        new_data = serialize_stocks(origin_stock, destination=None)
-        operation = 'OUT_STOCKS'
-
     else:
         raise HTTPException(status_code=400, detail="Tipo de movimentação inválido.")
 
