@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Path, status, APIRouter, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, Path, status, APIRouter, UploadFile, File, Query
 from app.database import Base, engine
 from app.models import store, order, order_item
 from app.schemas.store import StoreCreate, StoreOut
@@ -11,9 +11,15 @@ router = APIRouter()
 
 
 @router.get("/api/stores/", response_model=List[StoreOut])
-def list_stores(db: Session = Depends(get_db)):
-    stores = db.query(store.Store).all()
-    return stores
+def list_stores(city: str = Query(None), uf: str = Query(None),db: Session = Depends(get_db)):
+    query = db.query(store.Store)
+
+    if city:
+        query = query.filter(store.Store.city.ilike(f"%{city}%"))
+    if uf:
+        query = query.filter(store.Store.uf.ilike(f"%{uf}%"))
+
+    return query.all()
 
 @router.get("/api/stores/{id}/", response_model=StoreOut)
 def get_store(id: int = Path(..., description="ID loja"), db:Session = Depends(get_db)):
