@@ -14,12 +14,14 @@ import shutil
 
 
 
+
 def create_product(db: Session, product: schemas.ProductCreate, user_data: dict):
     user_id = int(user_data.get('user_id'))
     db_product = models.Product(**product.model_dump())
     db_product.created_by = user_id
     db.add(db_product)
     db.commit()
+    db.refresh(db_product)
     
     audit.product_audit_(
         db=db,
@@ -63,6 +65,7 @@ def get_products_with_userid(db: Session, user_data: dict, skip: int = 0, limit:
     return [
         {
             "id_product": p.id_product,
+            "id_stock": p.id_stock,
             "name": p.name,
             "image": p.image,
             "description": p.description,
@@ -105,6 +108,7 @@ def get_all_products_with_stock(db: Session, skip: int = 0, limit: int = 100):
     return [
         {
             "id_product": p.id_product,
+            "id_stock": p.id_stock,
             "name": p.name,
             "image": p.image,
             "description": p.description,
@@ -131,6 +135,7 @@ def get_product(db: Session, product_id: int):
 
     return {
         "id_product": product.id_product,
+        "id_stock": product.id_stock,
         "name": product.name,
         "image": product.image,
         "description": product.description,

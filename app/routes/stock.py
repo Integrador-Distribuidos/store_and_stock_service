@@ -38,7 +38,7 @@ def read_stock(id: int, db: Session = Depends(get_db)):
 
 
 #Consultar todos os estoques
-@router.get("/stocks/all", response_model=list[schemas.StockOut])
+@router.get("/stocks/all/", response_model=list[schemas.StockOut])
 def read_all_stocks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return crud.get_all_stocks(db, skip, limit)
 

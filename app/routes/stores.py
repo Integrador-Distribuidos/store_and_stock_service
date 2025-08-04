@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, Path, status, APIRouter, UploadFile, File
 from app.database import Base, engine
+from app.dependencies.auth import get_current_user
 from app.models import store, order, order_item
 from app.schemas.store import StoreCreate, StoreOut
 from app.database import get_db
@@ -10,9 +11,15 @@ from typing import List
 router = APIRouter()
 
 
-@router.get("/api/stores/", response_model=List[StoreOut])
+@router.get("/api/stores/all", response_model=List[StoreOut])
 def list_stores(db: Session = Depends(get_db)):
     stores = db.query(store.Store).all()
+    return stores
+
+@router.get("/api/stores/", response_model=List[StoreOut])
+def list_stores(db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
+    user_id = int(user_data.get("user_id"))
+    stores = db.query(store.Store).filter(store.Store.created_by == user_id).all()
     return stores
 
 @router.get("/api/stores/{id}/", response_model=StoreOut)
@@ -23,7 +30,7 @@ def get_store(id: int = Path(..., description="ID loja"), db:Session = Depends(g
     return store_obj
 
 @router.post("/api/stores/", response_model=StoreOut)
-def create_store(store_data: StoreCreate, db: Session = Depends(get_db)):
+def create_store(store_data: StoreCreate, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
     existing_store = db.query(store.Store).filter(
         (store.Store.cnpj == store_data.cnpj) | 
         (store.Store.email == store_data.email)
@@ -32,6 +39,7 @@ def create_store(store_data: StoreCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="CNPJ ou email já cadastrado.")
 
     new_store = store.Store(**store_data.dict())
+    new_store.created_by = int(user_data.get('user_id'))
     db.add(new_store)
     db.commit()
     db.refresh(new_store)

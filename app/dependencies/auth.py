@@ -1,8 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import jwt, JWTError
-
-SECRET_KEY = "123456"  # mesma usada no Django
+SECRET_KEY = "123456"
 ALGORITHM = "HS256"    # padrão do SimpleJWT
 bearer_scheme = HTTPBearer()
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
