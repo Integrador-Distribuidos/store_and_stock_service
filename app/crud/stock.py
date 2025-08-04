@@ -1,17 +1,19 @@
 from sys import audit
 from sqlalchemy import null
 from sqlalchemy.orm import Session
+from app.dependencies.auth import get_current_user
 from app.schemas import stock as schemas
 from app.models import models
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 from datetime import date
 from app.utils.audit import obtain_data,stock_audit_
 
 # CRUD de Estoque
 # -----------------------
 
-def create_stock(db: Session, stock: schemas.StockCreate):
+def create_stock(db: Session, stock: schemas.StockCreate, user_data: dict):
     db_stock = models.Stock(**stock.model_dump())
+    db_stock.created_by = int(user_data.get('user_id'))
     db.add(db_stock)
     db.commit()
     new_data = obtain_data(db_stock)
@@ -21,12 +23,12 @@ def create_stock(db: Session, stock: schemas.StockCreate):
         operation="CREATE",
         new_data=new_data,
         old_data={},
-        changed_by=1#Trocar pelo id do usuário que alterou
+        changed_by=db_stock.created_by
     )
     db.refresh(db_stock)
     return db_stock
 
-def create_ProductStock(db: Session, stock: schemas.StockCreate):
+def create_ProductStock(db: Session, stock: schemas.StockCreate, user_data: dict):
     db_productstock = models.ProductStock(**stock.model_dump())
     stock_exists = db.query(models.Stock).filter(models.Stock.id_stock == db_productstock.id_stock).first()
     product_exists = db.query(models.Product).filter(models.Product.id_product == db_productstock.id_product).first()
@@ -105,9 +107,50 @@ def get_all_stocks(db: Session, skip: int = 0, limit: int = 100):
 
     return results
 
+def get_stocks_for_user(db: Session, user_data: dict, skip: int = 0, limit: int = 100):
+    user_id = int(user_data.get("user_id"))
+    
+    stocks = (
+        db.query(models.Stock)
+        .filter(models.Stock.created_by == user_id)  # filtro pelo usuário
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    results = []
+    for stock in stocks:
+        products = (
+            db.query(models.Product.id_product, models.Product.name, models.ProductStock.quantity)
+            .join(models.ProductStock, models.ProductStock.id_product == models.Product.id_product)
+            .filter(models.ProductStock.id_stock == stock.id_stock)
+            .all()
+        )
+        products_list = [
+            schemas.ProductStockOutInfo(id_product=p.id_product, name=p.name, quantity=p.quantity)
+            for p in products
+        ]
 
+        results.append(
+            schemas.StockOut(
+                id_stock=stock.id_stock,
+                id_store=stock.id_store,
+                name=stock.name,
+                city=stock.city,
+                uf=stock.uf,
+                zip_code=stock.zip_code,
+                address=stock.address,
+                creation_date=stock.creation_date,
+                products=products_list,
+            )
+        )
+    
+    if not results:
+        raise HTTPException(status_code=404, detail="Nenhum estoque encontrado!")
+    
+    return results
 
-def delete_stock(db: Session, stock_id: int):
+def delete_stock(db: Session, stock_id: int, user_data: dict):
     stock = db.query(models.Stock).filter(models.Stock.id_stock == stock_id).first()
     if stock:
         old_data = obtain_data(stock)
@@ -117,7 +160,7 @@ def delete_stock(db: Session, stock_id: int):
             operation="DELETE",
             old_data=old_data,
             new_data={},
-            changed_by=1#Trocar pelo id do usuário que alterou
+            changed_by=int(user_data.get('user_id'))
         )
         db.query(models.ProductStock).filter(models.ProductStock.id_stock == stock_id).delete()
         db.delete(stock)
@@ -127,7 +170,7 @@ def delete_stock(db: Session, stock_id: int):
     return stock
 
 
-def update_stock(db: Session, stock_id: int, stock_data: schemas.StockCreate):
+def update_stock(db: Session, stock_id: int, stock_data: schemas.StockCreate, user_data: dict):
     stock = db.query(models.Stock).filter(models.Stock.id_stock == stock_id).first()
     if stock:
         old_data = obtain_data(stock)
@@ -141,7 +184,7 @@ def update_stock(db: Session, stock_id: int, stock_data: schemas.StockCreate):
             operation="UPDATE",
             new_data=new_data,
             old_data=old_data,
-            changed_by=1#Trocar pelo id do usuário que alterou
+            changed_by=int(user_data.get('user_id'))
         )
         db.refresh(stock)
     else: 

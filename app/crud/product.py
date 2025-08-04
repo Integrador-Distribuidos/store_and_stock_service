@@ -1,3 +1,4 @@
+import token
 from sqlalchemy.orm import Session
 from app.models import models
 from app.utils.file_utils import save_upload_file, validate_file, UPLOAD_FOLDER
@@ -5,27 +6,80 @@ from app.schemas import product as schemas
 from fastapi import HTTPException, UploadFile, File
 from app.utils import audit
 from sqlalchemy import inspect, null
-import os
+import asyncio
 import shutil
 # -----------------------
 # CRUD de Produto
 # -----------------------
 
-def create_product(db: Session, product: schemas.ProductCreate):
+
+
+
+def create_product(db: Session, product: schemas.ProductCreate, user_data: dict):
+    user_id = int(user_data.get('user_id'))
     db_product = models.Product(**product.model_dump())
+    db_product.created_by = user_id
     db.add(db_product)
     db.commit()
-
+    db.refresh(db_product)
+    
     audit.product_audit_(
-    db=db,
-    id_product=db_product.id_product,
-    operation="CREATE",
-    old_data={},
-    new_data=audit.obtain_data(db_product),
-    changed_by=1 #Substituir pelo id do usuário
-)
+        db=db,
+        id_product=db_product.id_product,
+        operation="CREATE",
+        old_data={},
+        new_data=audit.obtain_data(db_product),
+        changed_by=user_id
+    )
     db.refresh(db_product)
     return db_product
+
+
+def get_products_with_userid(db: Session, user_data: dict, skip: int = 0, limit: int = 100):
+    user_id = int(user_data.get("user_id"))
+
+    products = (
+        db.query(models.Product)
+        .filter(models.Product.created_by == user_id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    product_ids = [p.id_product for p in products]
+
+    stocks = (
+        db.query(models.ProductStock)
+        .filter(models.ProductStock.id_product.in_(product_ids))
+        .all()
+    )
+
+    stock_map = {}
+    for stock in stocks:
+        if stock.id_stock is not None:
+            stock_map.setdefault(stock.id_product, []).append({
+                "id_stock": stock.id_stock,
+                "quantity": stock.quantity
+            })
+
+    return [
+        {
+            "id_product": p.id_product,
+            "id_stock": p.id_stock,
+            "name": p.name,
+            "image": p.image,
+            "description": p.description,
+            "price": p.price,
+            "sku": p.sku,
+            "category": p.category,
+            "quantity": p.quantity,
+            "creation_date": p.creation_date,
+            "stocks": stock_map.get(p.id_product, [])
+        }
+        for p in products
+    ]
+
+
 
 def get_all_products_with_stock(db: Session, skip: int = 0, limit: int = 100):
     products = (
@@ -54,6 +108,7 @@ def get_all_products_with_stock(db: Session, skip: int = 0, limit: int = 100):
     return [
         {
             "id_product": p.id_product,
+            "id_stock": p.id_stock,
             "name": p.name,
             "image": p.image,
             "description": p.description,
@@ -80,6 +135,7 @@ def get_product(db: Session, product_id: int):
 
     return {
         "id_product": product.id_product,
+        "id_stock": product.id_stock,
         "name": product.name,
         "image": product.image,
         "description": product.description,
@@ -94,7 +150,8 @@ def get_product(db: Session, product_id: int):
         ]
     }
 
-def update_product(db: Session, product_id: int, product_data: schemas.ProductUpdate):
+def update_product(db: Session, product_id: int, product_data: schemas.ProductUpdate, user_data: dict):
+    user_id = int(user_data.get('user_id'))
     product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail=f"Produto com ID {product_id} não encontrado")
@@ -116,14 +173,15 @@ def update_product(db: Session, product_id: int, product_data: schemas.ProductUp
         operation="UPDATE",
         old_data=old_data,
         new_data=new_data,
-        changed_by=1 #modificar com o id do usuário de alteração
+        changed_by=user_id #modificar com o id do usuário de alteração
     )
 
     db.commit()
     db.refresh(product)
     return product
 
-def delete_product(db: Session, product_id: int):
+def delete_product(db: Session, product_id: int, user_data: dict):
+    user_id = int(user_data.get('user_id'))
     product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail=f"Produto com ID {product_id} não encontrado")
@@ -136,7 +194,7 @@ def delete_product(db: Session, product_id: int):
         operation="DELETE",
         old_data=old_data,
         new_data={},
-        changed_by=1 #modificar com o id do usuário de alteração
+        changed_by=user_id #modificar com o id do usuário de alteração
     )
         # Apagar registros relacionados em product_stock
         # Captura o estado anterior (deepcopy é opcional, mas evita mutações futuras)
@@ -150,6 +208,9 @@ def delete_product(db: Session, product_id: int):
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Could not delete product: {str(e)}")
     return {"detail": "Produto  deletado"}
+
+
+
 
 def upload_product_image(product_id: int, db: Session, file: UploadFile):
     product = db.query(models.Product).filter(models.Product.id_product == product_id).first()

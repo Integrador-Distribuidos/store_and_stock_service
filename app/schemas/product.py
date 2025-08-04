@@ -13,6 +13,7 @@ class ProductStockOutInfo(BaseModel):
 
 
 class ProductCreate(BaseModel):
+    id_stock: Optional[int] = int
     name: str
     image: Optional[str] = ""
     description: str
@@ -32,6 +33,7 @@ class ProductOut(ProductCreate):
 
 
 class ProductUpdate(BaseModel):
+    id_stock: Optional[int] = int
     name: Optional[str]
     image: Optional[str]
     description: Optional[str]

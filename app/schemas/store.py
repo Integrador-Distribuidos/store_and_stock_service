@@ -5,10 +5,6 @@ from typing import Optional
 class StoreCreate(BaseModel):
     name: str
     cnpj: str
-    city: str
-    uf: str
-    zip_code: str
-    address: str
     creation_date: date
     email: str
     phone_number: str

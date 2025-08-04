@@ -3,6 +3,7 @@ from app.database import Base
 class Product(Base):
     __tablename__ = "product"
     id_product = Column(Integer, primary_key=True, index=True)
+    id_stock = Column(Integer, nullable=False)
     name = Column(String, index=True)
     image = Column(String)
     description = Column(String, index=True)
@@ -11,6 +12,7 @@ class Product(Base):
     category = Column(String, index=True)
     quantity = Column(Integer, index=True)
     creation_date = Column(Date, nullable=False)
+    created_by = Column(Integer, nullable=False)
 
 class StockMovement(Base):
     __tablename__ = "stock_movement"
@@ -40,3 +42,4 @@ class Stock(Base):
     zip_code = Column(String, index=True)
     address = Column(String, index=True)
     creation_date = Column(Date, nullable=False)
+    created_by = Column(Integer, nullable=False)
