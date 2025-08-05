@@ -7,6 +7,7 @@ from app.database import get_db
 from app.utils.file_utils import save_upload_file, validate_file, UPLOAD_FOLDER
 from sqlalchemy.orm import Session
 from typing import List
+from app.models.models import Product, Stock, ProductStock
 
 router = APIRouter()
 
@@ -78,6 +79,20 @@ def delete_store(id: int, db: Session = Depends(get_db)):
             detail="Não é possível deletar a loja pois existem pedidos associados a ela."
         )
 
+    # Busca estoques associados à loja
+    stocks = db.query(Stock).filter(Stock.id_store == id).all()
+
+    for stk in stocks:
+        # Deleta registros em product_stock com esse id_stock
+        db.query(ProductStock).filter(ProductStock.id_stock == stk.id_stock).delete()
+
+        # Deleta produtos cujo id_stock seja o mesmo
+        db.query(Product).filter(Product.id_stock == stk.id_stock).delete()
+
+        # Deleta o estoque
+        db.delete(stk)
+
+    # Por fim, deleta a loja
     db.delete(store_obj)
     db.commit()
     return
