@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Path, status, APIRouter, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, Path, status, APIRouter, UploadFile, File, Query
 from app.database import Base, engine
 from app.dependencies.auth import get_current_user
 from app.models import store, order, order_item
