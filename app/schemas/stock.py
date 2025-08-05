@@ -5,6 +5,8 @@ class ProductStockOutInfo(BaseModel):
     id_product: int
     name: str
     quantity: int
+    price: float
+    image: Optional[str] = str
 # ---------- STOCK ----------
 class StockCreate(BaseModel):
     id_store: int
