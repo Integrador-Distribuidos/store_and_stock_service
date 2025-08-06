@@ -22,22 +22,11 @@ def create_product(db: Session, product: schemas.ProductCreate, user_data: dict)
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
-    
-    audit.product_audit_(
-        db=db,
-        id_product=db_product.id_product,
-        operation="CREATE",
-        old_data={},
-        new_data=audit.obtain_data(db_product),
-        changed_by=user_id
-    )
-    db.refresh(db_product)
     return db_product
 
 
 def get_products_with_userid(db: Session, user_data: dict, skip: int = 0, limit: int = 100):
     user_id = int(user_data.get("user_id"))
-
     products = (
         db.query(models.Product)
         .filter(models.Product.created_by == user_id)
@@ -155,26 +144,12 @@ def update_product(db: Session, product_id: int, product_data: schemas.ProductUp
     product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail=f"Produto com ID {product_id} não encontrado")
-    
-    old_data = audit.obtain_data(product)
-
     # Atualiza só os campos que vieram no JSON (diferentes de None)
     update_data = product_data.model_dump(exclude_unset=True)
 
     for field, value in update_data.items():
         if hasattr(product, field):
             setattr(product, field, value)
-
-    new_data = audit.obtain_data(product)
-        
-    audit.product_audit_(
-        db=db,
-        id_product=product_id,
-        operation="UPDATE",
-        old_data=old_data,
-        new_data=new_data,
-        changed_by=user_id #modificar com o id do usuário de alteração
-    )
 
     db.commit()
     db.refresh(product)
@@ -185,17 +160,6 @@ def delete_product(db: Session, product_id: int, user_data: dict):
     product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail=f"Produto com ID {product_id} não encontrado")
-    
-    old_data = audit.obtain_data(product)
-
-    audit.product_audit_(
-        db=db,
-        id_product=product_id,
-        operation="DELETE",
-        old_data=old_data,
-        new_data={},
-        changed_by=user_id #modificar com o id do usuário de alteração
-    )
         # Apagar registros relacionados em product_stock
         # Captura o estado anterior (deepcopy é opcional, mas evita mutações futuras)
 
@@ -216,27 +180,10 @@ def upload_product_image(product_id: int, db: Session, file: UploadFile):
     product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
-    
-    old_data = audit.obtain_data(product)
-    
     old_image = product.image or ""
-
-
     ext = validate_file(file)
     filename = f"product_{product_id}.{ext}"
     filepath = save_upload_file(upload_file=file, folder=UPLOAD_FOLDER,filename=filename, old_image=old_image)
-
     product.image = filename
     db.commit()
-
-    new_data = audit.obtain_data(product)
-    audit.product_audit_(
-        db=db,
-        id_product=product_id,
-        operation="UPDATE_IMAGE",
-        old_data=old_data,
-        new_data=new_data,
-        changed_by=1  # Substitua pelo ID real do usuário
-    )
-
     return {"message": "Imagem enviada com sucesso", "filename": filename}

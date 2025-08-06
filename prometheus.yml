@@ -1,0 +1,24 @@
+# my global config
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files: []
+
+# A scrape configuration for Prometheus and FastAPI service
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "stock_and_store"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["localhost:8000"]

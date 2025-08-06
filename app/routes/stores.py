@@ -47,7 +47,7 @@ def create_store(store_data: StoreCreate, db: Session = Depends(get_db), user_da
     return new_store
 
 @router.put("/api/stores/{id}/", response_model=StoreOut)
-def update_store(id: int, store_data: StoreCreate, db: Session = Depends(get_db)):
+def update_store(id: int, store_data: StoreCreate, db: Session = Depends(get_db),  user_data: dict = Depends(get_current_user)):
     store_obj = db.query(store.Store).filter(store.Store.id_store == id).first()
     if not store_obj:
         raise HTTPException(status_code=404, detail="Loja não encontrada")
@@ -67,7 +67,7 @@ def update_store(id: int, store_data: StoreCreate, db: Session = Depends(get_db)
     return store_obj
 
 @router.delete("/api/stores/{id}/", status_code=status.HTTP_204_NO_CONTENT)
-def delete_store(id: int, db: Session = Depends(get_db)):
+def delete_store(id: int, db: Session = Depends(get_db),  user_data: dict = Depends(get_current_user)):
     store_obj = db.query(store.Store).filter(store.Store.id_store == id).first()
     if not store_obj:
         raise HTTPException(status_code=404, detail="Loja não encontrada")
@@ -98,7 +98,7 @@ def delete_store(id: int, db: Session = Depends(get_db)):
     return
 
 @router.post("/api/stores/{store_id}/upload-image/")
-def upload_store_image(store_id: int, db: Session = Depends(get_db), file: UploadFile = File(...)):
+def upload_store_image(store_id: int, db: Session = Depends(get_db), file: UploadFile = File(...),  user_data: dict = Depends(get_current_user)):
     stores = db.query(store.Store).filter(store.Store.id_store == store_id).first()
     if not stores:
         raise HTTPException(status_code=404, detail="Loja não encontrada")

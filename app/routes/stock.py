@@ -6,15 +6,9 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Header
 from app.models import stock_audit
 from app import database
+from app.database import get_db
 
 router = APIRouter(prefix="/api")
-
-def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # ROTAS DE ESTOQUE
 

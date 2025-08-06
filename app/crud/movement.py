@@ -41,7 +41,6 @@ def create_stock_movement(db: Session, movement: schemas.StockMovementCreate):
             raise HTTPException(status_code=400, detail="Produto não encontrado no estoque de origem.")
         if origin_stock.quantity < db_movement.quantity:
             raise HTTPException(status_code=400, detail="Estoque de origem insuficiente para transferência.")
-        old_data = serialize_stocks(origin_stock, destination_stock)
         # Debita do estoque origem
         origin_stock.quantity -= db_movement.quantity
         origin_stock.last_update_date = date.today()
@@ -60,8 +59,6 @@ def create_stock_movement(db: Session, movement: schemas.StockMovementCreate):
             )
             db.add(destination_stock)
         db.flush()
-        new_data = serialize_stocks(origin_stock, destination_stock)
-        operation = "TRANSFER_STOCKS"
     else:
         raise HTTPException(status_code=400, detail="Tipo de movimentação inválido.")
 
@@ -69,16 +66,6 @@ def create_stock_movement(db: Session, movement: schemas.StockMovementCreate):
     db.add(db_movement)
     db.commit()
     db.refresh(db_movement)
-
-        # Auditoria origem
-    movement_audit(
-        db=db,
-        id_movement=db_movement.id_movement,
-        operation=operation,
-        old_data=old_data,
-        new_data=new_data,
-        changed_by=1  # Substitua pelo ID real do usuário autenticado
-    )
 
     return db_movement
 

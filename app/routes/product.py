@@ -10,16 +10,6 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter(prefix="/api")
 
-'''def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()'''
-
-
-
-
 # ------------------------
 # ROTAS DE PRODUTOS
 # ------------------------
@@ -70,7 +60,7 @@ def delete_product(id: int, db: Session = Depends(get_db), user_data: dict = Dep
 
 
 @router.post("/products/{product_id}/upload-image/")
-def upload_product_image_api(product_id: int,db: Session = Depends(get_db), file: UploadFile = File(...)):
+def upload_product_image_api(product_id: int,db: Session = Depends(get_db), file: UploadFile = File(...),  user_data: dict = Depends(get_current_user)):
     return crud.upload_product_image(product_id=product_id, db=db, file=file)
 
 
