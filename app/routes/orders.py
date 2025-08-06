@@ -123,8 +123,13 @@ def patch_order_item(id: int, item_data: OrderItemPatch, db: Session = Depends(g
     if not item:
         raise HTTPException(status_code=404, detail="Item do pedido não encontrado")
 
-    for field, value in item_data.dict(exclude_unset=True).items():
+    data = item_data.dict(exclude_unset=True)
+
+    for field, value in data.items():
         setattr(item, field, value)
+
+    if 'quantity' in data:
+        item.subtotal = item.unit_price * item.quantity
 
     db.commit()
     db.refresh(item)
