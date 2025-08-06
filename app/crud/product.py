@@ -7,12 +7,12 @@ from fastapi import HTTPException, UploadFile
 # CRUD de Produto
 # -----------------------
 
-
-
-
 def create_product(db: Session, product: schemas.ProductCreate, user_data: dict):
     user_id = int(user_data.get('user_id'))
     db_product = models.Product(**product.model_dump())
+    stock_exists = db.query(models.Stock).filter(models.Stock.id_stock == db_product.id_stock).first()
+    if not stock_exists:
+        raise HTTPException(status_code=404, detail="Estoque não encontrado!")
     db_product.created_by = user_id
     db.add(db_product)
     db.commit()
@@ -22,6 +22,7 @@ def create_product(db: Session, product: schemas.ProductCreate, user_data: dict)
 
 def get_products_with_userid(db: Session, user_data: dict, skip: int = 0, limit: int = 100):
     user_id = int(user_data.get("user_id"))
+    
     products = (
         db.query(models.Product)
         .filter(models.Product.created_by == user_id)
@@ -30,21 +31,8 @@ def get_products_with_userid(db: Session, user_data: dict, skip: int = 0, limit:
         .all()
     )
 
-    product_ids = [p.id_product for p in products]
-
-    stocks = (
-        db.query(models.ProductStock)
-        .filter(models.ProductStock.id_product.in_(product_ids))
-        .all()
-    )
-
-    stock_map = {}
-    for stock in stocks:
-        if stock.id_stock is not None:
-            stock_map.setdefault(stock.id_product, []).append({
-                "id_stock": stock.id_stock,
-                "quantity": stock.quantity
-            })
+    if not products:
+        raise HTTPException(status_code=404, detail="Nenhum produto encontrado!")
 
     return [
         {
@@ -58,7 +46,12 @@ def get_products_with_userid(db: Session, user_data: dict, skip: int = 0, limit:
             "category": p.category,
             "quantity": p.quantity,
             "creation_date": p.creation_date,
-            "stocks": stock_map.get(p.id_product, [])
+            "stocks": [
+                {
+                    "id_stock": p.id_stock,
+                    "quantity": p.quantity
+                }
+            ] if p.id_stock is not None else []
         }
         for p in products
     ]
@@ -73,22 +66,6 @@ def get_all_products_with_stock(db: Session, skip: int = 0, limit: int = 100):
         .all()
     )
 
-    product_ids = [p.id_product for p in products]
-
-    stocks = (
-        db.query(models.ProductStock)
-        .filter(models.ProductStock.id_product.in_(product_ids))
-        .all()
-    )
-
-    stock_map = {}
-    for stock in stocks:
-        if stock.id_stock is not None:  # filtra estoques inválidos
-            stock_map.setdefault(stock.id_product, []).append({
-                "id_stock": stock.id_stock,
-                "quantity": stock.quantity
-            })
-
     return [
         {
             "id_product": p.id_product,
@@ -101,21 +78,28 @@ def get_all_products_with_stock(db: Session, skip: int = 0, limit: int = 100):
             "category": p.category,
             "quantity": p.quantity,
             "creation_date": p.creation_date,
-            "stocks": stock_map.get(p.id_product, [])
+            "stock": {
+                "id_stock": p.stock.id_stock,
+                "name": p.stock.name,
+                "city": p.stock.city,
+                "uf": p.stock.uf,
+                "zip_code": p.stock.zip_code,
+                "address": p.stock.address,
+                "creation_date": p.stock.creation_date,
+            } if p.stock else None
         }
         for p in products
     ]
 
 def get_product(db: Session, product_id: int):
-    product = db.query(models.Product).filter(models.Product.id_product == product_id).first()
+    product = (
+        db.query(models.Product)
+        .filter(models.Product.id_product == product_id)
+        .first()
+    )
+
     if not product:
         raise HTTPException(status_code=404, detail=f"Produto com ID {product_id} não encontrado")
-
-    stock_entries = (
-        db.query(models.ProductStock.id_stock, models.ProductStock.quantity)
-        .filter(models.ProductStock.id_product == product_id)
-        .all()
-    )
 
     return {
         "id_product": product.id_product,
@@ -126,12 +110,16 @@ def get_product(db: Session, product_id: int):
         "price": product.price,
         "sku": product.sku,
         "category": product.category,
-        "quantity":product.quantity,
+        "quantity": product.quantity,
         "creation_date": product.creation_date,
-        "stocks": [
-            {"id_stock": s.id_stock, "quantity": s.quantity}
-            for s in stock_entries
-        ]
+        "stock": {
+            "id_stock": product.stock.id_stock,
+            "name": product.stock.name,
+            "city": product.stock.city,
+            "uf": product.stock.uf,
+            "zip_code": product.stock.zip_code,
+            "address": product.stock.address,
+        } if product.stock else None
     }
 
 def update_product(db: Session, product_id: int, product_data: schemas.ProductUpdate, user_data: dict):
@@ -158,7 +146,6 @@ def delete_product(db: Session, product_id: int, user_data: dict):
         # Apagar registros relacionados em product_stock
         # Captura o estado anterior (deepcopy é opcional, mas evita mutações futuras)
 
-    db.query(models.ProductStock).filter(models.ProductStock.id_product == product_id).delete()
     db.query(models.StockMovement).filter(models.StockMovement.id_product == product_id).delete()
     try:
         db.delete(product)

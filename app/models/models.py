@@ -1,9 +1,30 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float
+from sqlalchemy.orm import relationship
 from app.database import Base
+class Stock(Base):
+    __tablename__ = "stock"
+    
+    id_stock = Column(Integer, primary_key=True, index=True)
+    id_store = Column(Integer, index=True)
+    name = Column(String, index=True)
+    city = Column(String, index=True)
+    uf = Column(String, index=True)
+    zip_code = Column(String, index=True)
+    address = Column(String, index=True)
+    creation_date = Column(Date, nullable=False)
+    created_by = Column(Integer, nullable=False)
+
+    products = relationship(
+        "Product",
+        back_populates="stock",
+        cascade="all, delete-orphan"  # Remove os produtos se o estoque for deletado
+    )
+
 class Product(Base):
     __tablename__ = "product"
+    
     id_product = Column(Integer, primary_key=True, index=True)
-    id_stock = Column(Integer, nullable=False)
+    id_stock = Column(Integer, ForeignKey("stock.id_stock", ondelete="CASCADE"), nullable=False)
     name = Column(String, index=True)
     image = Column(String)
     description = Column(String, index=True)
@@ -14,6 +35,9 @@ class Product(Base):
     creation_date = Column(Date, nullable=False)
     created_by = Column(Integer, nullable=False)
 
+    # Produto pertence a um estoque (relacionamento filho)
+    stock = relationship("Stock", back_populates="products")
+
 class StockMovement(Base):
     __tablename__ = "stock_movement"
     id_movement = Column(Integer, primary_key=True, index=True)
@@ -23,23 +47,6 @@ class StockMovement(Base):
     quantity = Column(Integer)
     observation = Column(String)
     creation_date = Column(Date, nullable=False)
-
-class ProductStock(Base):
-    __tablename__ = "product_stock"
-    id_productstock = Column(Integer, primary_key=True, index=True)
-    id_product = Column(Integer, ForeignKey("product.id_product"), index=True)
-    id_stock = Column(Integer, ForeignKey("stock.id_stock"), index=True)
-    quantity = Column(Integer, index=True)
-    last_update_date = Column(Date, nullable=False)
-
-class Stock(Base):
-    __tablename__ = "stock"
-    id_stock = Column(Integer, primary_key=True, index=True)
-    id_store = Column(Integer, index=True)
-    name = Column(String, index=True)
-    city = Column(String, index=True)
-    uf = Column(String, index=True)
-    zip_code = Column(String, index=True)
-    address = Column(String, index=True)
-    creation_date = Column(Date, nullable=False)
     created_by = Column(Integer, nullable=False)
+
+

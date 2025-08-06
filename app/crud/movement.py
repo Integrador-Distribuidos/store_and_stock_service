@@ -2,8 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import models
 from app.schemas import movement as schemas
 from fastapi import HTTPException
-from datetime import date, datetime
-from sqlalchemy import inspect
+from datetime import date
 
 def create_stock_movement(db: Session, movement: schemas.StockMovementCreate):
     '''
