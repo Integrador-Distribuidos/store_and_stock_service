@@ -9,6 +9,8 @@ class Order(Base):
     id_user = Column(Integer, nullable=False)
     id_store = Column(Integer, ForeignKey("store.id_store"), nullable=False)
     status = Column(String, nullable=False)
-    order_date = Column(Date, nullable=False)
-    total_value = Column(Float, nullable=False)
+    order_date = Column(Date, nullable=True)
+    total_value = Column(Float, nullable=False, default=0.0)
     creation_date = Column(Date, nullable=False)
+
+    items = relationship("OrderItem", back_populates="order", cascade="all, delete")
