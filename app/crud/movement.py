@@ -1,8 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models import models
-from app.utils.audit import movement_audit, obtain_data, serialize_stocks
 from app.schemas import movement as schemas
-from app.utils import audit
 from fastapi import HTTPException
 from datetime import date, datetime
 from sqlalchemy import inspect

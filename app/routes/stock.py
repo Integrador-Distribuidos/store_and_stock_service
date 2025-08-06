@@ -3,9 +3,7 @@ from app.schemas import stock as schemas
 from app.schemas import product
 from app.crud import stock as crud
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException, Header
-from app.models import stock_audit
-from app import database
+from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_db
 
 router = APIRouter(prefix="/api")

@@ -2,7 +2,6 @@ from app.dependencies.auth import get_current_user
 from app.schemas import product as schemas
 from sqlalchemy.orm import Session
 from app.crud import product as crud
-from app.models import product_audit
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Header
 from app.database import get_db

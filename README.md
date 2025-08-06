@@ -20,7 +20,12 @@ Este projeto é uma API moderna e leve construída com **FastAPI**, containeriza
 
 ```bash
 git clone https://github.com/seu-usuario/stock_service.git
-cd stock_service
+cd stock_and_store_service
+
+### 2. Crie um arquivo .env na mesma pasta do arquivo docker e defina as variáveis de ambiente
+SECRET_KEY= #deve ser a mesma usada no serviço de usuarios em DJANGO_SECRET_KEY
+ALGORITHM=HS256
+
 
 
 .
@@ -52,6 +57,7 @@ stock_service Diretório principal da aplicação
 # Arquivos de configuração e documentação
 ├── requirements.txt       # Lista de dependências Python necessárias para o projeto
 ├── Dockerfile             # Define a imagem Docker para a aplicação FastAPI
+|__ .env                   # Defina as variáveis de ambiente
 ├── docker-compose.yml     # Arquivo de orquestração Docker para app + banco + outros serviços
 └── README.md              # Documentação geral do projeto (setup, uso, contribuições etc.)
 

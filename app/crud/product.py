@@ -1,13 +1,8 @@
-import token
 from sqlalchemy.orm import Session
 from app.models import models
 from app.utils.file_utils import save_upload_file, validate_file, UPLOAD_FOLDER
 from app.schemas import product as schemas
-from fastapi import HTTPException, UploadFile, File
-from app.utils import audit
-from sqlalchemy import inspect, null
-import asyncio
-import shutil
+from fastapi import HTTPException, UploadFile
 # -----------------------
 # CRUD de Produto
 # -----------------------
