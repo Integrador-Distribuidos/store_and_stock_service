@@ -1,12 +1,7 @@
-from sys import audit
-from sqlalchemy import null
 from sqlalchemy.orm import Session
-from app.dependencies.auth import get_current_user
 from app.schemas import stock as schemas
 from app.models import models
-from fastapi import Depends, HTTPException
-from datetime import date
-from app.utils.audit import obtain_data,stock_audit_
+from fastapi import HTTPException
 
 # CRUD de Estoque
 # -----------------------
@@ -16,15 +11,6 @@ def create_stock(db: Session, stock: schemas.StockCreate, user_data: dict):
     db_stock.created_by = int(user_data.get('user_id'))
     db.add(db_stock)
     db.commit()
-    new_data = obtain_data(db_stock)
-    stock_audit_(
-        db=db,
-        id_stock=db_stock.id_stock,
-        operation="CREATE",
-        new_data=new_data,
-        old_data={},
-        changed_by=db_stock.created_by
-    )
     db.refresh(db_stock)
     return db_stock
 
@@ -39,15 +25,6 @@ def create_ProductStock(db: Session, stock: schemas.StockCreate, user_data: dict
     db.add(db_productstock)
     db.commit()
     db.refresh(db_productstock)
-    new_data = obtain_data(db_productstock)
-    stock_audit_(
-        db=db,
-        id_stock=db_productstock.id_stock,
-        operation="ADD_PRODUCT_TO_STOCK",
-        old_data={},  # como é criação, não há dado anterior
-        new_data=new_data,
-        changed_by=1  # Substitua pelo ID real do usuário autenticado
-    )
     return db_productstock
 
 def get_stock(db: Session, stock_id: int):
@@ -154,18 +131,6 @@ def delete_stock(db: Session, stock_id: int, user_data: dict):
     stock = db.query(models.Stock).filter(models.Stock.id_stock == stock_id).first()
     if not stock:
         raise HTTPException(status_code=404, detail=f"Estoque com ID {stock_id} não encontrado!")
-
-    # Auditoria
-    old_data = obtain_data(stock)
-    stock_audit_(
-        db=db,
-        id_stock=stock.id_stock,
-        operation="DELETE",
-        old_data=old_data,
-        new_data={},
-        changed_by=int(user_data.get('user_id'))
-    )
-
     # Buscar produtos vinculados ao estoque
     products_to_delete = db.query(models.Product).filter(models.Product.id_stock == stock_id).all()
     product_ids = [p.id_product for p in products_to_delete]
@@ -187,19 +152,9 @@ def delete_stock(db: Session, stock_id: int, user_data: dict):
 def update_stock(db: Session, stock_id: int, stock_data: schemas.StockCreate, user_data: dict):
     stock = db.query(models.Stock).filter(models.Stock.id_stock == stock_id).first()
     if stock:
-        old_data = obtain_data(stock)
         for field, value in stock_data.model_dump().items():
             setattr(stock, field, value)
         db.commit()
-        new_data = obtain_data(stock)
-        stock_audit_(
-            db=db,
-            id_stock=stock.id_stock,
-            operation="UPDATE",
-            new_data=new_data,
-            old_data=old_data,
-            changed_by=int(user_data.get('user_id'))
-        )
         db.refresh(stock)
     else: 
         raise HTTPException(status_code=404, detail=f"Estoque com ID {stock_id} não encotrado!")

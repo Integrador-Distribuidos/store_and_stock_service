@@ -4,22 +4,16 @@ from sqlalchemy.orm import Session
 from app.schemas import movement as schemas
 from fastapi import APIRouter, Depends, HTTPException
 from app import database
-from app.models import stock_movement_audit
+from app.dependencies.auth import get_current_user
+from app.database import get_db
 router = APIRouter(prefix="/api")
-
-def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # ------------------------
 # ROTAS DE MOVIMENTAÇÃO DE ESTOQUE
 # ------------------------
 #Criar movimentação
 @router.post("/stocks/movements/", response_model=schemas.StockMovementOut)
-def create_movement(movement: schemas.StockMovementCreate, db: Session = Depends(get_db)):
+def create_movement(movement: schemas.StockMovementCreate, db: Session = Depends(get_db),  user_data: dict = Depends(get_current_user)):
     return crud.create_stock_movement(db, movement)
 
 #Consultar Movimentações
