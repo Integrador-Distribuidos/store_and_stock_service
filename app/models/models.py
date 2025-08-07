@@ -1,3 +1,4 @@
+from shutil import move
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -20,6 +21,7 @@ class Stock(Base):
         cascade="all, delete-orphan"  # Remove os produtos se o estoque for deletado
     )
 
+
 class Product(Base):
     __tablename__ = "product"
     
@@ -41,7 +43,7 @@ class Product(Base):
 class StockMovement(Base):
     __tablename__ = "stock_movement"
     id_movement = Column(Integer, primary_key=True, index=True)
-    id_product = Column(Integer, ForeignKey("product.id_product"))
+    id_product = Column(Integer, ForeignKey("product.id_product", ondelete="CASCADE"), nullable=False)
     id_stock_origin = Column(Integer)
     id_stock_destination = Column(Integer)
     quantity = Column(Integer)
