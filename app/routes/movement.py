@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api")
 #Criar movimentação
 @router.post("/stocks/movements/", response_model=schemas.StockMovementOut)
 def create_movement(movement: schemas.StockMovementCreate, db: Session = Depends(get_db),  user_data: dict = Depends(get_current_user)):
-    return crud.create_stock_movement(db, movement)
+    return crud.create_stock_movement(db, movement, user_data=user_data)
 
 #Consultar Movimentações
 @router.get("/stocks/movements/", response_model=list[schemas.StockMovementOut])

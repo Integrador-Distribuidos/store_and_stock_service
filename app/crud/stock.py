@@ -32,13 +32,17 @@ def get_stock(db: Session, stock_id: int):
     if not stock:
         raise HTTPException(status_code=404, detail=f"Estoque com ID {stock_id} não encontrado!")
 
-    products = (
-        db.query(models.Product.id_product, models.Product.name, models.Product.quantity, models.Product.price, models.Product.image)
-        .join(models.ProductStock, models.ProductStock.id_product == models.Product.id_product)
-        .filter(models.ProductStock.id_stock == stock.id_stock)
-        .all()
-    )
-    products_list = [schemas.ProductStockOutInfo(id_product=p.id_product, name=p.name, quantity=p.quantity, price=p.price, image=p.image) for p in products]
+    # Acessa diretamente a relação entre estoque e produtos
+    products_list = [
+        schemas.ProductStockOutInfo(
+            id_product=p.id_product,
+            name=p.name,
+            quantity=p.quantity,
+            price=p.price,
+            image=p.image
+        )
+        for p in stock.products  # relação direta
+    ]
 
     return schemas.StockOut(
         id_stock=stock.id_stock,
@@ -58,13 +62,17 @@ def get_all_stocks(db: Session, skip: int = 0, limit: int = 100):
     results = []
 
     for stock in stocks:
-        products = (
-            db.query(models.Product.id_product, models.Product.name, models.Product.quantity, models.Product.image, models.Product.price)
-            .join(models.ProductStock, models.ProductStock.id_product == models.Product.id_product)
-            .filter(models.ProductStock.id_stock == stock.id_stock)
-            .all()
-        )
-        products_list = [schemas.ProductStockOutInfo(id_product=p.id_product, name=p.name, quantity=p.quantity, price= p.price, image=p.image) for p in products]
+        # Acessa os produtos relacionados diretamente via relacionamento 'products'
+        products_list = [
+            schemas.ProductStockOutInfo(
+                id_product=p.id_product,
+                name=p.name,
+                quantity=p.quantity,
+                price=p.price,
+                image=p.image
+            )
+            for p in stock.products  # aqui acessa diretamente os produtos do estoque
+        ]
 
         results.append(
             schemas.StockOut(
@@ -97,17 +105,32 @@ def get_stocks_for_user(db: Session, user_data: dict, skip: int = 0, limit: int 
     
     results = []
     for stock in stocks:
+    # Consulta os produtos pertencentes a um estoque específico
         products = (
-            db.query(models.Product.id_product, models.Product.name, models.ProductStock.quantity)
-            .join(models.ProductStock, models.ProductStock.id_product == models.Product.id_product)
-            .filter(models.ProductStock.id_stock == stock.id_stock)
+            db.query(
+                models.Product.id_product,
+                models.Product.name,
+                models.Product.quantity,
+                models.Product.image,
+                models.Product.price
+            )
+            .filter(models.Product.id_stock == stock.id_stock)  # Join não é necessário
             .all()
         )
+
+        # Transforma os produtos encontrados em uma lista de schemas de saída
         products_list = [
-            schemas.ProductStockOutInfo(id_product=p.id_product, name=p.name, quantity=p.quantity, price=p.price, image=p.image)
+            schemas.ProductStockOutInfo(
+                id_product=p.id_product,
+                name=p.name,
+                quantity=p.quantity,
+                price=p.price,
+                image=p.image
+            )
             for p in products
         ]
 
+        # Adiciona o estoque com os produtos ao resultado final
         results.append(
             schemas.StockOut(
                 id_stock=stock.id_stock,
@@ -121,6 +144,7 @@ def get_stocks_for_user(db: Session, user_data: dict, skip: int = 0, limit: int 
                 products=products_list,
             )
         )
+
     
     if not results:
         raise HTTPException(status_code=404, detail="Nenhum estoque encontrado!")
@@ -134,10 +158,6 @@ def delete_stock(db: Session, stock_id: int, user_data: dict):
     # Buscar produtos vinculados ao estoque
     products_to_delete = db.query(models.Product).filter(models.Product.id_stock == stock_id).all()
     product_ids = [p.id_product for p in products_to_delete]
-
-    # Deletar referências na tabela product_stock
-    if product_ids:
-        db.query(models.ProductStock).filter(models.ProductStock.id_product.in_(product_ids)).delete(synchronize_session=False)
 
     # Deletar os produtos
     db.query(models.Product).filter(models.Product.id_product.in_(product_ids)).delete(synchronize_session=False)

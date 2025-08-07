@@ -7,7 +7,7 @@ from app.database import get_db
 from app.utils.file_utils import save_upload_file, validate_file, UPLOAD_FOLDER
 from sqlalchemy.orm import Session
 from typing import List
-from app.models.models import Product, Stock, ProductStock
+from app.models.models import Product, Stock
 
 router = APIRouter()
 
@@ -67,7 +67,7 @@ def update_store(id: int, store_data: StoreCreate, db: Session = Depends(get_db)
     return store_obj
 
 @router.delete("/api/stores/{id}/", status_code=status.HTTP_204_NO_CONTENT)
-def delete_store(id: int, db: Session = Depends(get_db),  user_data: dict = Depends(get_current_user)):
+def delete_store(id: int, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
     store_obj = db.query(store.Store).filter(store.Store.id_store == id).first()
     if not store_obj:
         raise HTTPException(status_code=404, detail="Loja não encontrada")
@@ -83,19 +83,16 @@ def delete_store(id: int, db: Session = Depends(get_db),  user_data: dict = Depe
     stocks = db.query(Stock).filter(Stock.id_store == id).all()
 
     for stk in stocks:
-        # Deleta registros em product_stock com esse id_stock
-        db.query(ProductStock).filter(ProductStock.id_stock == stk.id_stock).delete()
-
-        # Deleta produtos cujo id_stock seja o mesmo
+        # Deleta produtos diretamente associados a este estoque
         db.query(Product).filter(Product.id_stock == stk.id_stock).delete()
 
         # Deleta o estoque
         db.delete(stk)
 
-    # Por fim, deleta a loja
+    # Deleta a loja
     db.delete(store_obj)
     db.commit()
-    return
+    return {"message": "Loja deletada com sucesso!"}
 
 @router.post("/api/stores/{store_id}/upload-image/")
 def upload_store_image(store_id: int, db: Session = Depends(get_db), file: UploadFile = File(...),  user_data: dict = Depends(get_current_user)):
