@@ -49,7 +49,8 @@ def create_stock_movement(db: Session, movement: schemas.StockMovementCreate, us
             category=origin_product.category,
             quantity=movement.quantity,
             id_stock=movement.id_stock_destination,
-            creation_date=date.today()
+            creation_date=date.today(),
+            created_by=origin_product.created_by
         )
         db.add(destination_product)
 

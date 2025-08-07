@@ -3,9 +3,12 @@ from app.schemas import product as schemas
 from sqlalchemy.orm import Session
 from app.crud import product as crud
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Header
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.database import get_db
 from fastapi.responses import JSONResponse
+from typing import Optional
+from datetime import date
+from app.utils.file_utils import save_upload_file, validate_file, UPLOAD_FOLDER
 
 router = APIRouter(prefix="/api")
 
@@ -16,10 +19,29 @@ router = APIRouter(prefix="/api")
 
 #Cadastrar produto
 @router.post("/products/", response_model=schemas.ProductOut)
-def create_product( product: schemas.ProductCreate, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
-     return crud.create_product(db=db, product=product, user_data=user_data)
-
-
+def create_product(
+        db: Session = Depends(get_db),
+        user_data: dict = Depends(get_current_user),
+        id_stock: int = Form(...),
+        name: str = Form(...),
+        description: str = Form(...),
+        price: float = Form(...),
+        sku: str = Form(...),
+        category: str = Form(...),
+        quantity: Optional[int] = Form(1),
+        creation_date: date = Form(...),
+        image: Optional[UploadFile] = File(None),
+    ):
+    return crud.create_product(
+        db=db, 
+        id_stock=id_stock,
+        user_data=user_data, 
+        name=name, image=image, 
+        description=description, 
+        price=price, sku=sku, 
+        category=category, 
+        quantity=quantity, 
+        creation_date=creation_date)    
 
 
 #Consultar todos os produtos
@@ -44,8 +66,37 @@ def read_product(id: int, db: Session = Depends(get_db)):
 
 #Alterar produto
 @router.put("/products/{id}", response_model=schemas.ProductOut)
-def update_product(id: int, product: schemas.ProductUpdate, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
-    return crud.update_product(db, id, product, user_data=user_data)
+def update_product(
+    id: int,
+    db: Session = Depends(get_db),
+    id_stock: Optional[int] = Form(None),
+    name: Optional[str] = Form(None),
+    description: Optional[str] = Form(None),
+    price: Optional[float] = Form(None),
+    sku: Optional[str] = Form(None),
+    category: Optional[str] = Form(None),
+    quantity: Optional[int] = Form(None),
+    creation_date: Optional[date] = Form(None),
+    image: Optional[UploadFile] = File(None),
+    user_data: dict = Depends(get_current_user)
+):
+    updated_product = crud.update_product(
+        db=db,
+        product_id=id,
+        id_stock=id_stock,
+        name=name,
+        description=description,
+        price=price,
+        sku=sku,
+        category=category,
+        quantity=quantity,
+        creation_date=creation_date,
+        user_data=user_data,
+        image=image
+    )
+
+    return updated_product
+
 
 
 #Deletar produto
@@ -55,13 +106,3 @@ def delete_product(id: int, db: Session = Depends(get_db), user_data: dict = Dep
     if not product:
         return JSONResponse(status_code=404, content={"detail": "Produto não Encontrado!"})
     return JSONResponse(content={"detail": "Produto Deletado!"})
-
-
-
-@router.post("/products/{product_id}/upload-image/")
-def upload_product_image_api(product_id: int,db: Session = Depends(get_db), file: UploadFile = File(...),  user_data: dict = Depends(get_current_user)):
-    return crud.upload_product_image(product_id=product_id, db=db, file=file)
-
-
-
-
