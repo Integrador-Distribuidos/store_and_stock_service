@@ -1,6 +1,5 @@
 from sqlalchemy import event
 from app.models.audit_log import AuditLog
-import json
 from datetime import datetime, date
 def get_model_data(instance):
     def safe_value(val):
@@ -33,7 +32,7 @@ def register_auditing_for_model(model_class, Session):
                     table_name=obj.__tablename__,
                     operation="UPDATE",
                     old_data=get_model_data(obj),  # dados antes
-                    new_data=get_model_data(obj),                        # dados depois
+                    new_data=get_model_data(obj),  # dados depois
                     user=getattr(session.info, "user", None)
                 )
                 session.add(log)

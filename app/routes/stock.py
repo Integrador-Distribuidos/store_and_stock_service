@@ -15,11 +15,6 @@ router = APIRouter(prefix="/api")
 def create_stock(stock: schemas.StockCreate, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
     return crud.create_stock(db, stock, user_data=user_data)
 
-#Cadastrar produto no estoque
-@router.post("/stocks/product", response_model=product.ProductStockOut)
-def create_productstock(stock: product.ProductStock, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
-    return crud.create_ProductStock(db, stock, user_data=user_data)
-
 #Consultar estoque específico
 @router.get("/stocks/{id}", response_model=schemas.StockOut)
 def read_stock(id: int, db: Session = Depends(get_db)):
@@ -27,7 +22,6 @@ def read_stock(id: int, db: Session = Depends(get_db)):
     if not stock:
         raise HTTPException(status_code=404, detail="Estoque não encontrado!")
     return stock
-
 
 #Consultar todos os estoques
 @router.get("/stocks/all/", response_model=list[schemas.StockOut])

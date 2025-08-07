@@ -8,6 +8,7 @@ class StoreCreate(BaseModel):
     creation_date: date
     email: str
     phone_number: str
+    
 
 class StoreOut(StoreCreate):
     id_store: int

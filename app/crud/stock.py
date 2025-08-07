@@ -13,8 +13,6 @@ def create_stock(db: Session, stock: schemas.StockCreate, user_data: dict):
     db.commit()
     db.refresh(db_stock)
     return db_stock
-
-def create_ProductStock(db: Session, stock: schemas.StockCreate, user_data: dict):
     db_productstock = models.ProductStock(**stock.model_dump())
     stock_exists = db.query(models.Stock).filter(models.Stock.id_stock == db_productstock.id_stock).first()
     product_exists = db.query(models.Product).filter(models.Product.id_product == db_productstock.id_product).first()
@@ -155,12 +153,16 @@ def delete_stock(db: Session, stock_id: int, user_data: dict):
     stock = db.query(models.Stock).filter(models.Stock.id_stock == stock_id).first()
     if not stock:
         raise HTTPException(status_code=404, detail=f"Estoque com ID {stock_id} não encontrado!")
-    # Buscar produtos vinculados ao estoque
+
     products_to_delete = db.query(models.Product).filter(models.Product.id_stock == stock_id).all()
     product_ids = [p.id_product for p in products_to_delete]
 
-    # Deletar os produtos
-    db.query(models.Product).filter(models.Product.id_product.in_(product_ids)).delete(synchronize_session=False)
+    if product_ids:
+        # Deletar movimentações dos produtos
+        db.query(models.StockMovement).filter(models.StockMovement.id_product.in_(product_ids)).delete(synchronize_session=False)
+
+        # Deletar os produtos
+        db.query(models.Product).filter(models.Product.id_product.in_(product_ids)).delete(synchronize_session=False)
 
     # Deletar o estoque
     db.delete(stock)
