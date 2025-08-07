@@ -4,62 +4,58 @@ from app.schemas import movement as schemas
 from fastapi import HTTPException
 from datetime import date
 
-def create_stock_movement(db: Session, movement: schemas.StockMovementCreate):
+def create_stock_movement(db: Session, movement: schemas.StockMovementCreate, user_data: dict):
+    user_id = int(user_data.get("user_id"))
     '''
     Transfere produto de um estoque para outro (sai de um, entra em outro).
     '''
-    db_movement = models.StockMovement(**movement.model_dump())
 
-    # Verifica se o produto está no estoque de origem
-    origin_stock = None
-    if db_movement.id_stock_origin:
-        origin_stock = (
-            db.query(models.ProductStock)
-            .filter_by(id_product=db_movement.id_product, id_stock=db_movement.id_stock_origin)
-            .first()
-        )
+    if movement.id_stock_origin == movement.id_stock_destination:
+        raise HTTPException(status_code=406, detail="Estoque de origem e destino são iguais.")
 
-    # Verifica se o produto está no estoque de destino
-    destination_stock = None
-    if db_movement.id_stock_destination:
-        destination_stock = (
-            db.query(models.ProductStock)
-            .filter_by(id_product=db_movement.id_product, id_stock=db_movement.id_stock_destination)
-            .first()
-        )
+    # Busca produto no estoque de origem
+    origin_product = db.query(models.Product).filter_by(
+        id_product=movement.id_product,
+        id_stock=movement.id_stock_origin
+    ).first()
 
-    if db_movement.id_stock_origin == db_movement.id_stock_destination:
-        raise HTTPException(status_code=406)
+    if not origin_product:
+        raise HTTPException(status_code=400, detail="Produto não encontrado no estoque de origem.")
 
-    # Ações baseadas no tipo de movimentação
-    if db_movement:
-        # Valida origem e destino
-        if not origin_stock:
-            raise HTTPException(status_code=400, detail="Produto não encontrado no estoque de origem.")
-        if origin_stock.quantity < db_movement.quantity:
-            raise HTTPException(status_code=400, detail="Estoque de origem insuficiente para transferência.")
-        # Debita do estoque origem
-        origin_stock.quantity -= db_movement.quantity
-        origin_stock.last_update_date = date.today()
-        db.flush()
+    if origin_product.quantity < movement.quantity:
+        raise HTTPException(status_code=400, detail="Estoque de origem insuficiente para transferência.")
 
-        # Credita no estoque destino
-        if destination_stock:
-            destination_stock.quantity += db_movement.quantity
-            destination_stock.last_update_date = date.today()
-        else:
-            destination_stock = models.ProductStock(
-                id_product=db_movement.id_product,
-                id_stock=db_movement.id_stock_destination,
-                quantity=db_movement.quantity,
-                last_update_date=date.today()
-            )
-            db.add(destination_stock)
-        db.flush()
+    # Busca produto equivalente no estoque de destino (mesmo SKU)
+    destination_product = db.query(models.Product).filter_by(
+        sku=origin_product.sku,
+        id_stock=movement.id_stock_destination
+    ).first()
+
+    # Atualiza estoque origem
+    origin_product.quantity -= movement.quantity
+    origin_product.last_update_date = date.today()
+
+    # Atualiza ou cria produto no destino
+    if destination_product:
+        destination_product.quantity += movement.quantity
+        destination_product.last_update_date = date.today()
     else:
-        raise HTTPException(status_code=400, detail="Tipo de movimentação inválido.")
+        destination_product = models.Product(
+            name=origin_product.name,
+            sku=origin_product.sku,
+            description=origin_product.description,
+            price=origin_product.price,
+            image=origin_product.image,
+            category=origin_product.category,
+            quantity=movement.quantity,
+            id_stock=movement.id_stock_destination,
+            creation_date=date.today()
+        )
+        db.add(destination_product)
 
-    # Registra a movimentação
+    # Registra movimentação
+    db_movement = models.StockMovement(**movement.model_dump())
+    db_movement.created_by = user_id
     db.add(db_movement)
     db.commit()
     db.refresh(db_movement)
