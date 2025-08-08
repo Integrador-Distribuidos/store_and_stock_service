@@ -14,7 +14,7 @@ services:
 
   web:
     build:
-      dockerfile: DockerFile
+      dockerfile: Dockerfile
     container_name: stock_service_container
     ports:
       - "8000:8000"
@@ -44,4 +44,4 @@ services:
 
 volumes:
   postgres_data:
-  pgadmin_data:
+  pgadmin_data:
