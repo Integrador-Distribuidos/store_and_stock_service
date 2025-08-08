@@ -5,6 +5,12 @@ from typing import Optional, List, Dict, Any
 class ProductStockInfo(BaseModel):
     id_stock: int
     quantity: int
+    name: str
+    city: str
+    uf: str
+    zip_code: str
+    address: str
+    creation_date: date
 
 class ProductStockOutInfo(BaseModel):
     id_product: int
