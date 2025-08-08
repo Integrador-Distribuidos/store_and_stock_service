@@ -1,16 +1,23 @@
 from sqlalchemy import event
 from app.models.audit_log import AuditLog
 from datetime import datetime, date
+from decimal import Decimal
 def get_model_data(instance):
     def safe_value(val):
         if isinstance(val, (datetime, date)):
             return val.isoformat()
+        if isinstance(val, Decimal):
+            return float(val)  # ou str(val), se preferir
         return val
 
     return {
         col.name: safe_value(getattr(instance, col.name))
         for col in instance.__table__.columns
     }
+def get_user_id(session):
+    id = session.info.get("user", None)
+    id = int(id)
+    return int(id)
 
 def register_auditing_for_model(model_class, Session):
     @event.listens_for(Session, "after_flush")
@@ -22,7 +29,7 @@ def register_auditing_for_model(model_class, Session):
                     operation="INSERT",
                     old_data=None,
                     new_data=get_model_data(obj),
-                    user=getattr(session.info, "user", None)
+                    user=get_user_id(session)
                 )
                 session.add(log)
 
@@ -33,7 +40,7 @@ def register_auditing_for_model(model_class, Session):
                     operation="UPDATE",
                     old_data=get_model_data(obj),  # dados antes
                     new_data=get_model_data(obj),  # dados depois
-                    user=getattr(session.info, "user", None)
+                    user=get_user_id(session)
                 )
                 session.add(log)
 
@@ -44,6 +51,6 @@ def register_auditing_for_model(model_class, Session):
                     operation="DELETE",
                     old_data=get_model_data(obj),
                     new_data=None,
-                    user=getattr(session.info, "user", None)
+                    user=get_user_id(session)
                 )
                 session.add(log)

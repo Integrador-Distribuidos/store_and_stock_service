@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from decimal import Decimal
 from datetime import date
 from typing import Optional
 
@@ -13,6 +14,7 @@ class StoreCreate(BaseModel):
 class StoreOut(StoreCreate):
     id_store: int
     image: Optional[str] = []
+    balance: Decimal = Decimal('0.00')
 
     class Config:
         orm_mode = True
