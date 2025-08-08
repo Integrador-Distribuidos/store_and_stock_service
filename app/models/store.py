@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, Numeric
 from app.database import Base
 
 class Store(Base):
@@ -12,3 +12,7 @@ class Store(Base):
     phone_number = Column(String, nullable=False)
     image = Column(String, index=True)
     created_by = Column(Integer, nullable=False)
+    balance = Column(
+        Numeric(precision=20, scale=2),  # equivale ao max_digits=20, decimal_places=2
+        default=0
+    )

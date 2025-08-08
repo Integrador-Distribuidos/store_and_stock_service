@@ -1,10 +1,13 @@
 from sqlalchemy import event
 from app.models.audit_log import AuditLog
 from datetime import datetime, date
+from decimal import Decimal
 def get_model_data(instance):
     def safe_value(val):
         if isinstance(val, (datetime, date)):
             return val.isoformat()
+        if isinstance(val, Decimal):
+            return float(val)  # ou str(val), se preferir
         return val
 
     return {
@@ -13,9 +16,7 @@ def get_model_data(instance):
     }
 def get_user_id(session):
     id = session.info.get("user", None)
-    print(f"User ID from session: {type(id)}")
     id = int(id)
-    print(f"User ID converted to int: {type(id)}")
     return int(id)
 
 def register_auditing_for_model(model_class, Session):
