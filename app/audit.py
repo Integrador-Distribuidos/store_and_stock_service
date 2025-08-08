@@ -11,6 +11,12 @@ def get_model_data(instance):
         col.name: safe_value(getattr(instance, col.name))
         for col in instance.__table__.columns
     }
+def get_user_id(session):
+    id = session.info.get("user", None)
+    print(f"User ID from session: {type(id)}")
+    id = int(id)
+    print(f"User ID converted to int: {type(id)}")
+    return int(id)
 
 def register_auditing_for_model(model_class, Session):
     @event.listens_for(Session, "after_flush")
@@ -22,7 +28,7 @@ def register_auditing_for_model(model_class, Session):
                     operation="INSERT",
                     old_data=None,
                     new_data=get_model_data(obj),
-                    user=getattr(session.info, "user", None)
+                    user=get_user_id(session)
                 )
                 session.add(log)
 
@@ -33,7 +39,7 @@ def register_auditing_for_model(model_class, Session):
                     operation="UPDATE",
                     old_data=get_model_data(obj),  # dados antes
                     new_data=get_model_data(obj),  # dados depois
-                    user=getattr(session.info, "user", None)
+                    user=get_user_id(session)
                 )
                 session.add(log)
 
@@ -44,6 +50,6 @@ def register_auditing_for_model(model_class, Session):
                     operation="DELETE",
                     old_data=get_model_data(obj),
                     new_data=None,
-                    user=getattr(session.info, "user", None)
+                    user=get_user_id(session)
                 )
                 session.add(log)
