@@ -35,8 +35,9 @@ def list_orders(db: Session = Depends(get_db)):
 @router.post("/api/orders/", response_model=OrderOut)
 def create_order(order_data: OrderCreate, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
     now_brazil = datetime.now(ZoneInfo("America/Sao_Paulo"))
+
     new_order = order.Order(
-        **order_data.dict(),
+        **order_data.dict(exclude={"order_date", "creation_date"}),
         order_date=now_brazil,
         creation_date=now_brazil
     )
@@ -44,6 +45,7 @@ def create_order(order_data: OrderCreate, db: Session = Depends(get_db), user_da
     db.commit()
     db.refresh(new_order)
     return new_order
+
 
 @router.patch("/api/orders/{id}/finalize/", response_model=OrderOut)
 def finalize_order(id: int, db: Session = Depends(get_db)):

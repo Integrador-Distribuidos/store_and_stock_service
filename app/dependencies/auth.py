@@ -29,7 +29,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        return {"id_user": user_id, "token": token}
+        return {"user_id": user_id, "token": token}
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
