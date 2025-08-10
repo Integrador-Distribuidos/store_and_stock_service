@@ -9,6 +9,8 @@ from app.dependencies.auth import get_current_user
 from app.schemas.order_item import OrderItemCreate, OrderItemOut
 from app.database import get_db
 from app.models import models
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 router = APIRouter()
 
@@ -54,7 +56,6 @@ def create_order_item(id: int, item_data: OrderItemCreate, db: Session = Depends
 
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Erro ao adicionar item ao pedido: {str(e)}")
-
 
 @router.get("/api/orders/", response_model=List[OrderOut])
 def list_orders(db: Session = Depends(get_db)):
@@ -107,16 +108,6 @@ def delete_order(id: int, db: Session = Depends(get_db),  user_data: dict = Depe
 def list_order_items(id: int, db: Session = Depends(get_db)):
     return db.query(order_item.OrderItem).filter(order_item.OrderItem.id_order == id).all()
 
-"""@router.post("/api/orders/{id}/items/", response_model=OrderItemOut)
-def create_order_item(id: int, item_data: OrderItemCreate, db: Session = Depends(get_db),  user_data: dict = Depends(get_current_user)):
-    new_item = order_item.OrderItem(**item_data.dict(), id_order=id)
-    db.add(new_item)
-    db.commit()
-    db.refresh(new_item)
-
-    recalculate_order_total(id, db)
-    return new_item"""
-
 @router.put("/api/orders/items/{id}/", response_model=OrderItemOut)
 def update_order_item(id: int, item_data: OrderItemCreate, db: Session = Depends(get_db),  user_data: dict = Depends(get_current_user)):
     item = db.query(order_item.OrderItem).filter(order_item.OrderItem.id_order_item == id).first()
@@ -144,7 +135,6 @@ def delete_order_item(id: int, db: Session = Depends(get_db), user_data: dict = 
 
     recalculate_order_total(order_id, db)
     return {"detail": "Item do pedido deletado com sucesso"}
-
 
 @router.patch("/api/orders/items/{id}/", response_model=OrderItemOut)
 def patch_order_item(id: int, item_data: OrderItemPatch, db: Session = Depends(get_db)):
@@ -213,10 +203,6 @@ def finalize_order(id: int, db: Session = Depends(get_db)):
 
     return new_order
 
-@router.patch("/api/orders/{id}/finalize/", response_model=OrderOut)
-def finalize_order(id: int, db: Session = Depends(get_db)):
-    return finalize_order(id, db)
-
 @router.post("/api/orders/", response_model=OrderOut)
 def create_order(order_data: OrderCreate, db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
     new_order = order.Order(**order_data.dict())
@@ -224,3 +210,19 @@ def create_order(order_data: OrderCreate, db: Session = Depends(get_db), user_da
     db.commit()
     db.refresh(new_order)
     return new_order
+
+
+@router.get("/api/orders/my", response_model=List[OrderOut])
+def list_user_orders(
+    user_data: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user_id = user_data.get('user_id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Usuário não autenticado")
+    
+    orders = db.query(order.Order).filter(
+        order.Order.id_user == user_id,
+        order.Order.status == "paid"
+    ).all()
+    return orders
