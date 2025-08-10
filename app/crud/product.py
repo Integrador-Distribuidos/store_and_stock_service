@@ -1,5 +1,5 @@
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models import models
 from app.utils.file_utils import save_upload_file, validate_file, UPLOAD_FOLDER
 from app.schemas import product as schemas
@@ -51,18 +51,25 @@ def create_product(
 
 def get_products_with_userid(db: Session, user_data: dict, skip: int = 0, limit: int = 100):
     user_id = int(user_data.get("user_id"))
-    
-    products = (
-        db.query(models.Product)
+
+    # INNER JOIN manual
+    results = (
+        db.query(models.Product, models.Stock)
+        .join(models.Stock, models.Product.id_stock == models.Stock.id_stock)
         .filter(models.Product.created_by == user_id)
         .offset(skip)
         .limit(limit)
         .all()
     )
 
-    if not products:
+    if not results:
         raise HTTPException(status_code=404, detail="Nenhum produto encontrado!")
+    
+    print("Resultados do JOIN:", results)  # Debugging line
+    for p, s in results:
+        print(f"Produto: {p.name}, Estoque: {s.name}")
 
+    # Correção: preenche todos os campos de estoque vindos do join
     return [
         {
             "id_product": p.id_product,
@@ -77,15 +84,19 @@ def get_products_with_userid(db: Session, user_data: dict, skip: int = 0, limit:
             "creation_date": p.creation_date,
             "stocks": [
                 {
-                    "id_stock": p.id_stock,
-                    "quantity": p.quantity
+                    "id_stock": s.id_stock,
+                    "quantity": p.quantity,
+                    "name": s.name,
+                    "city": s.city,
+                    "uf": s.uf,
+                    "zip_code": s.zip_code,
+                    "address": s.address,
+                    "creation_date": s.creation_date,
                 }
-            ] if p.id_stock is not None else []
+            ]
         }
-        for p in products
+        for p, s in results
     ]
-
-
 
 def get_all_products_with_stock(db: Session, skip: int = 0, limit: int = 100):
     products = (

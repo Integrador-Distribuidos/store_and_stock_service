@@ -1,3 +1,4 @@
+from decimal import Decimal
 from fastapi import Depends, HTTPException, Path, status, APIRouter
 from sqlalchemy.orm import Session
 from typing import List
@@ -198,12 +199,16 @@ def finalize_order_logic(id: int, db: Session):
     db.commit()
 
     items = db.query(order_item.OrderItem).filter(order_item.OrderItem.id_order == id).all()
+    loja = db.query(store.Store).filter(store.Store.id_store == db_order.id_store).first()
     for item in items:
         product = db.query(models.Product).filter(models.Product.id_product == item.id_product).first()
         if not product:
             raise HTTPException(status_code=404, detail="Produto não encontrado")
 
-        product.quantity -= item.quantity
+        new_balance = loja.balance + Decimal(item.subtotal)
+        loja.balance = new_balance
+        new_quantity = product.quantity - item.quantity
+        product.quantity = new_quantity
         db.commit()
 
     now_brazil = datetime.now(ZoneInfo("America/Sao_Paulo"))

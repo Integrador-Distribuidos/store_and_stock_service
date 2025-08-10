@@ -10,5 +10,5 @@ class AuditLog(Base):
     operation = Column(String, nullable=False)  # INSERT, UPDATE, DELETE
     old_data = Column(JSON)
     new_data = Column(JSON)
-    user = Column(String)  # opcional: ID do usuário, IP etc.
+    user = Column(Integer)  # opcional: ID do usuário, IP etc.
     timestamp = Column(DateTime, default=datetime.utcnow)
