@@ -8,13 +8,20 @@ on:
 jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      BASE_URL: ${{ secrets.BASE_URL }}
-      ALGORITHM: ${{ secrets.ALGORITHM }}
+
+
 
     steps:
+
+      - name: Criar arquivo .env com variáveis de ambiente
+        run: |
+          cat > .env << EOF
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          BASE_URL=${{ secrets.BASE_URL }}
+          ALGORITHM=${{ secrets.ALGORITHM }}
+          EOF
+
       - name: Checkout code
         uses: actions/checkout@v3
 
