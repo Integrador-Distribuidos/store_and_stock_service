@@ -15,13 +15,14 @@ from app.models import models
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from app.strategies.order_total_value import OrderTotalCalculationStrategy, RegularOrderTotalCalculation, DiscountedOrderTotalCalculation
+
 router = APIRouter()
 
-def recalculate_order_total(order_id: int, db: Session):
-    items = db.query(order_item.OrderItem).filter(order_item.OrderItem.id_order == order_id).all()
-    total = sum(item.subtotal for item in items)
+def recalculate_order_total(order_id: int, db: Session, strategy: OrderTotalCalculationStrategy):
+    total_value = strategy.calculate_total(db, order_id)
     db_order = db.query(order.Order).filter(order.Order.id_order == order_id).first()
-    db_order.total_value = total
+    db_order.total_value = total_value
     db.commit()
 
 @router.get("/api/orders/my/", response_model=List[OrderOut])
@@ -124,17 +125,20 @@ def create_order_item(id: int, item_data: OrderItemCreate, db: Session = Depends
             existing_item.subtotal = existing_item.unit_price * existing_item.quantity
             db.commit()
             db.refresh(existing_item)
-            recalculate_order_total(id, db)
-            return existing_item
         else:
             new_item = order_item.OrderItem(**item_data.dict(), id_order=id)
             db.add(new_item)
             db.commit()
             db.refresh(new_item)
-            recalculate_order_total(id, db)
-            return new_item
+
+        #strategy = DiscountedOrderTotalCalculation()
+        strategy = RegularOrderTotalCalculation()
+        recalculate_order_total(id, db, strategy)
+
+        return new_item if not existing_item else existing_item
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Erro ao adicionar item ao pedido: {str(e)}")
+
 
 @router.get("/api/orders/", response_model=List[OrderOut])
 def list_orders(db: Session = Depends(get_db)):
@@ -199,7 +203,9 @@ def update_order_item(id: int, item_data: OrderItemCreate, db: Session = Depends
     db.commit()
     db.refresh(item)
 
-    recalculate_order_total(item.id_order, db)
+    #strategy = DiscountedOrderTotalCalculation()
+    strategy = RegularOrderTotalCalculation()
+    recalculate_order_total(item.id_order, db, strategy)
     return item
 
 @router.delete("/api/orders/items/{id}/", status_code=status.HTTP_204_NO_CONTENT)
@@ -212,7 +218,9 @@ def delete_order_item(id: int, db: Session = Depends(get_db), user_data: dict = 
     db.delete(item)
     db.commit()
 
-    recalculate_order_total(order_id, db)
+    #strategy = DiscountedOrderTotalCalculation()
+    strategy = RegularOrderTotalCalculation()
+    recalculate_order_total(order_id, db, strategy)
     return {"detail": "Item do pedido deletado com sucesso"}
 
 @router.patch("/api/orders/items/{id}/", response_model=OrderItemOut)
@@ -238,7 +246,9 @@ def patch_order_item(id: int, item_data: OrderItemPatch, db: Session = Depends(g
     db.commit()
     db.refresh(item)
 
-    recalculate_order_total(item.id_order, db)
+    #strategy = DiscountedOrderTotalCalculation()
+    strategy = RegularOrderTotalCalculation()
+    recalculate_order_total(item.id_order, db, strategy)
     return item
 
 @router.delete("/api/orders/items/{id}/", status_code=status.HTTP_204_NO_CONTENT)
@@ -251,7 +261,9 @@ def delete_order_item(id: int, db: Session = Depends(get_db), user_data: dict = 
     db.delete(item)
     db.commit()
 
-    recalculate_order_total(order_id, db)
+    #strategy = DiscountedOrderTotalCalculation()
+    strategy = RegularOrderTotalCalculation()
+    recalculate_order_total(order_id, db, strategy)
     return {"detail": "Item do pedido deletado com sucesso"}
 
 def finalize_order_logic(id: int, db: Session):
