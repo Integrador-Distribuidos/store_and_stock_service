@@ -6,7 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from datetime import datetime
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-unsafe-secret-key")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")  
 bearer_scheme = HTTPBearer()
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
@@ -14,29 +14,12 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("user_id") or payload.get("sub") or payload.get("id")
-
         if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Usuário inválido no token",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
+            raise HTTPException(status_code=401, detail="Usuário inválido no token.")
         expiration = payload.get("exp")
         if expiration and expiration < datetime.utcnow().timestamp():
             raise HTTPException(status_code=401, detail="Token expirado.")
-
-        try:
-            user_id = int(user_id)
-        except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="ID do usuário inválido",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        return {"id_user": user_id, "token": token}
-
+        return {"user_id": user_id}
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado.")
 
@@ -49,7 +32,7 @@ class AuthUserMiddleware(BaseHTTPMiddleware):
             try:
                 payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
                 user_id = payload.get("user_id")
-            except JWTError:
+            except JWTError as e:
                 pass
 
         request.state.user_id = user_id
