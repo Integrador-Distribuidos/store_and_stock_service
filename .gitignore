@@ -1,6 +1,6 @@
 venv
 /venv
-.env
+
 env
 /env
 __pycache__/
@@ -10,7 +10,7 @@ __pycache__/
 *.pyd
 *.egg-info/
 
-.env
+
 .venv/
 venv/
 
