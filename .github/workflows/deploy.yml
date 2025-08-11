@@ -26,16 +26,6 @@ jobs:
           docker --version
           docker compose version
 
-      - name: Create .env file
-        run: |
-          mkdir -p store_and_stock_service
-          cat <<EOF > store_and_stock_service/.env
-DATABASE_URL=${{ secrets.DATABASE_URL }}
-SECRET_KEY=${{ secrets.SECRET_KEY }}
-BASE_URL=${{ secrets.BASE_URL }}
-ALGORITHM=${{ secrets.ALGORITHM }}
-EOF
-
       - name: Build and start containers
         run: |
           docker compose up -d --build
