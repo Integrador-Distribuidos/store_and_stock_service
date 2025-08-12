@@ -30,7 +30,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # Ambiente de desenvolvimento do Vite
-        "https://server-stocks.stock2sell.shop"  # Produção
+        "https://server-stocks.stock2sell.shop",
+        "https://integrador-distribuidos.github.io",
+        "https://stock2sell.shop",
+        "http://stock2sell.shop"  # Produção
     ],
     allow_credentials=True,
     allow_methods=["*"],  # Permite todos os métodos HTTP (GET, POST, PUT, DELETE, etc.)
