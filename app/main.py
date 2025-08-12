@@ -35,6 +35,7 @@ app.add_middleware(
         "https://stock2sell.shop",
         "http://stock2sell.shop",  # Produção
         "https://stock2sell.vercel.app",
+        "http://56.125.155.34:8000"
     ],
     allow_credentials=True,
     allow_methods=["*"],  # Permite todos os métodos HTTP (GET, POST, PUT, DELETE, etc.)
