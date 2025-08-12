@@ -28,10 +28,13 @@ app.mount("/images", StaticFiles(directory="images"), name="images")
 # Habilita CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Porta padrão do Vite
+    allow_origins=[
+        "http://localhost:5173",  # Ambiente de desenvolvimento do Vite
+        "https://server-stocks.stock2sell.shop"  # Produção
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Permite todos os métodos HTTP (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Permite todos os cabeçalhos
 )
 
 # Cria as tabelas do banco
