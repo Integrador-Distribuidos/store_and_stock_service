@@ -33,7 +33,8 @@ app.add_middleware(
         "https://server-stocks.stock2sell.shop",
         "https://integrador-distribuidos.github.io",
         "https://stock2sell.shop",
-        "http://stock2sell.shop"  # Produção
+        "http://stock2sell.shop",  # Produção
+        "https://stock2sell.vercel.app/",
     ],
     allow_credentials=True,
     allow_methods=["*"],  # Permite todos os métodos HTTP (GET, POST, PUT, DELETE, etc.)
