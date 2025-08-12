@@ -27,7 +27,7 @@ def recalculate_order_total(order_id: int, db: Session, strategy: OrderTotalCalc
 
 @router.get("/api/orders/my/", response_model=List[OrderOut])
 def list_my_orders(db: Session = Depends(get_db), user_data: dict = Depends(get_current_user)):
-    user_id = user_data["id_user"]
+    user_id = user_data["user_id"]
     orders = db.query(order.Order).filter(order.Order.id_user == user_id).all()
     return orders
 

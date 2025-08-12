@@ -14,4 +14,5 @@ def create_test_token(user_id: str = "1000"):
         "exp": datetime.utcnow() + timedelta(minutes=300)  # expira em 300 minutos
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    print(token)
     return token
