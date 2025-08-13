@@ -1,3 +1,5 @@
+version: '3'
+
 services:
   db:
     image: postgres:16
@@ -11,6 +13,8 @@ services:
       POSTGRES_DB: postgres
     ports:
       - "5432:5432"
+    networks:
+      - my_network
 
   web:
     build:
@@ -27,6 +31,9 @@ services:
     volumes:
       - ./app:/app/app
       - ./images:/app/images
+    networks:
+      - my_shared_network
+      - my_network
 
   pgadmin:
     image: dpage/pgadmin4
@@ -40,8 +47,34 @@ services:
     ports:
       - "5050:80"
     volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - pgadmin_data:/var/lib/
+    networks:
+      - my_network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # Porta padrão para comunicação AMQP
+      - "15672:15672" # Porta da interface web de administração
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbituser
+      RABBITMQ_DEFAULT_PASS: rabbitpass
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - my_network
+      - my_shared_network
 
 volumes:
   postgres_data:
   pgadmin_data:
+  rabbitmq_data:
+
+networks:
+  my_shared_network:
+    external: true
+
+  my_network:
+    driver: bridge

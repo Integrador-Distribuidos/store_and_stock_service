@@ -1,96 +1,131 @@
+
+---
+
 # 🚀 FastAPI com Docker e PostgreSQL
 
-Este projeto é uma API moderna e leve construída com **FastAPI**, containerizada com **Docker**, e conectada a um banco de dados **PostgreSQL** com persistência de dados.
+Este projeto é uma **API de gestão de estoques, produtos e movimentações** construída com **FastAPI**, containerizada com **Docker** e integrada a um banco de dados **PostgreSQL** com persistência de dados.
 
 ---
 
 ## 📦 Tecnologias Utilizadas
 
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [PostgreSQL](https://www.postgresql.org/)
-- [Docker](https://www.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/)
-- [Uvicorn](https://www.uvicorn.org/)
+* [FastAPI](https://fastapi.tiangolo.com/) — Framework Python para APIs rápidas e assíncronas
+* [PostgreSQL](https://www.postgresql.org/) — Banco de dados relacional robusto
+* [Docker](https://www.docker.com/) — Containerização da aplicação
+* [Docker Compose](https://docs.docker.com/compose/) — Orquestração de múltiplos serviços
+* [Uvicorn](https://www.uvicorn.org/) — Servidor ASGI rápido para execução do FastAPI
 
 ---
 
-## ⚙️ Como executar
+## ⚙️ Como Executar
 
-### 1. Clone o repositório
+### 1️⃣ Clone o repositório
 
 ```bash
 git clone https://github.com/seu-usuario/stock_service.git
 cd stock_and_store_service
+```
 
-### 2. Crie um arquivo .env na mesma pasta do arquivo docker e defina as variáveis de ambiente
-SECRET_KEY= #deve ser a mesma usada no serviço de usuarios em DJANGO_SECRET_KEY
+### 2️⃣ Configure as variáveis de ambiente
+
+Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
+
+```env
+SECRET_KEY= # mesma usada no serviço de usuários (DJANGO_SECRET_KEY)
 ALGORITHM=HS256
+DATABASE_URL=postgresql://postgres:admin@localhost/postgres
+BASE_URL=http://localhost:8000
+```
 
+### 3️⃣ Suba os containers
 
+```bash
+docker-compose up --build
+```
 
-.
-stock_service Diretório principal da aplicação
-├── app
-│   # Pasta com as funções CRUD (Create, Read, Update, Delete)
-│   ├── crud
-│   │   ├── stock.py       # Funções para operações de estoque no banco (criar, buscar, atualizar, deletar)
-│   │   ├── product.py     # Funções para persistência e recuperação de dados de produtos
-│   │   └── movement.py    # Lógica de movimentações de estoque (entrada, saída, transferência)
+A API ficará disponível em:
+
+```
+http://localhost:8000
+```
+
+A documentação interativa do Swagger estará em:
+
+```
+http://localhost:8000/docs
+```
+
+---
+
+## 📂 Estrutura do Projeto
+
+```
+stock_service/
+├── app/
+│   ├── crud/
+│   │   ├── stock.py       # CRUD de estoques
+│   │   ├── product.py     # CRUD de produtos
+│   │   └── movement.py    # CRUD de movimentações
 │   │
-│   # Pasta com as rotas/endpoints da API FastAPI
-│   ├── routes
-│   │   ├── stock.py       # Rotas relacionadas ao recurso "estoque" (GET, POST, etc.)
-│   │   ├── product.py     # Rotas do recurso "produto"
-│   │   └── movement.py    # Rotas para movimentações de produtos entre estoques
+│   ├── routes/
+│   │   ├── stock.py       # Endpoints de estoques
+│   │   ├── product.py     # Endpoints de produtos
+│   │   └── movement.py    # Endpoints de movimentações
 │   │
-│   # Schemas Pydantic usados para validação e serialização de dados
-│   ├── schemas
-│   │   ├── stock.py       # Modelos de entrada/saída para operações de estoque
-│   │   ├── product.py     # Modelos para criação e leitura de produtos
-│   │   └── movement.py    # Schemas de movimentação de estoque (entrada, saída, transferência)
+│   ├── schemas/
+│   │   ├── stock.py       # Schemas Pydantic para estoques
+│   │   ├── product.py     # Schemas para produtos
+│   │   └── movement.py    # Schemas para movimentações
 │   │
-│   ├── main.py            # Ponto de entrada da aplicação FastAPI, configura e executa o app
-│   ├── models.py          # Modelos ORM (SQLAlchemy) que representam as tabelas do banco de dados
-│   ├── database.py        # Configuração da conexão com o banco de dados e criação da sessão
-│   └── __init__.py        # Torna o diretório app um pacote Python (pode estar vazio)
+│   ├── main.py            # Ponto de entrada da aplicação
+│   ├── models.py          # Modelos ORM (SQLAlchemy)
+│   ├── database.py        # Conexão com o banco
+│   └── __init__.py
 │
-# Arquivos de configuração e documentação
-├── requirements.txt       # Lista de dependências Python necessárias para o projeto
-├── Dockerfile             # Define a imagem Docker para a aplicação FastAPI
-|__ .env                   # Defina as variáveis de ambiente
-├── docker-compose.yml     # Arquivo de orquestração Docker para app + banco + outros serviços
-└── README.md              # Documentação geral do projeto (setup, uso, contribuições etc.)
+├── requirements.txt       # Dependências Python
+├── Dockerfile             # Configuração da imagem Docker
+├── docker-compose.yml     # Orquestração de serviços
+├── .env                   # Variáveis de ambiente
+└── README.md              # Documentação do projeto
+```
 
+---
 
+## 🔗 Endpoints da API
 
+### 📦 Estoques
 
-Endpoints da API
+| Método     | Endpoint                  | Descrição                              |
+| ---------- | ------------------------- | -------------------------------------- |
+| **POST**   | `/api/stocks/`            | Criar um novo estoque                  |
+| **POST**   | `/api/stocks/product/`    | Cadastrar um produto em um estoque     |
+| **GET**    | `/api/stocks/`            | Listar todos os estoques               |
+| **GET**    | `/api/stocks/{id}/`       | Detalhar um estoque específico         |
+| **GET**    | `/api/stocks/store/{id}/` | Listar estoques de uma loja específica |
+| **PUT**    | `/api/stocks/{id}/`       | Atualizar dados de um estoque          |
+| **DELETE** | `/api/stocks/{id}/`       | Deletar um estoque                     |
 
-ESTOQUES
-| Método | Endpoint                  | Descrição                              |
-| ------ | ------------------------- | -------------------------------------- |
-| POST   | `/api/stocks/`            | Criar um novo registro de estoque      |
-| POST   | '/api/stocks/product/'    | Cadastrar um produto em um estoque     |
-| GET    | `/api/stocks/`            | Listar todos os estoques               |
-| GET    | `/api/stocks/{id}/`       | Detalhar um estoque específico         |
-| GET    | `/api/stocks/store/{id}/` | Listar estoques de uma loja específica |
-| PUT    | `/api/stocks/{id}/`       | Atualizar dados de um estoque          |
-| DELETE | `/api/stocks/{id}/`       | Deletar um registro de estoque         |
+---
 
-PRODUTOS
-| Método | Endpoint             | Descrição                       |
-| ------ | -------------------- | ------------------------------- |
-| POST   | `/api/products/`     | Criar novo produto              |
-| GET    | `/api/products/`     | Listar todos os produtos        |
-| GET    | `/api/products/{id}` | Detalhar um produto específico  |
-| PUT    | `/api/products/{id}` | Atualizar um produto específico |
-| DELETE | `/api/products/{id}` | Deletar um produto específico   |
+### 🛒 Produtos
 
+| Método     | Endpoint              | Descrição                      |
+| ---------- | --------------------- | ------------------------------ |
+| **POST**   | `/api/products/`      | Criar um novo produto          |
+| **GET**    | `/api/products/`      | Listar todos os produtos       |
+| **GET**    | `/api/products/{id}/` | Detalhar um produto específico |
+| **PUT**    | `/api/products/{id}/` | Atualizar um produto           |
+| **DELETE** | `/api/products/{id}/` | Deletar um produto             |
 
-MOVIMENTAÇÃO DE ESTOQUE
-| Método | Endpoint                              | Descrição                                     |
-| ------ | ------------------------------------- | --------------------------------------------- |
-| POST   | `/api/stocks/movements/`              | Criar nova movimentação manual de estoque     |
-| GET    | `/api/stocks/movements/`              | Listar todas as movimentações                 |
-| GET    | `/api/stocks/movements/{id}/`         | Detalhar uma movimentação                     |
-| GET    | `/api/stocks/movements/product/{id}/` | Listar movimentações de um produto específico |
+---
+
+### 🔄 Movimentações de Estoque
+
+| Método   | Endpoint                              | Descrição                                     |
+| -------- | ------------------------------------- | --------------------------------------------- |
+| **POST** | `/api/stocks/movements/`              | Criar nova movimentação manual de estoque     |
+| **GET**  | `/api/stocks/movements/`              | Listar todas as movimentações                 |
+| **GET**  | `/api/stocks/movements/{id}/`         | Detalhar uma movimentação                     |
+| **GET**  | `/api/stocks/movements/product/{id}/` | Listar movimentações de um produto específico |
+
+---
