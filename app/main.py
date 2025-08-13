@@ -13,6 +13,7 @@ from app.audit import register_auditing_for_model
 from app.dependencies.auth import AuthUserMiddleware
 import asyncio
 import threading
+import logging
 from app.messaging.consumer import main
 
 app = FastAPI(title="Serviço de Estoques")
@@ -25,13 +26,16 @@ for model in [Product, Stock, StockMovement, store.Store, order.Order, order_ite
     register_auditing_for_model(model, SessionLocal)
 
 
-# Roda o processo de ouvir mensagens da fila do RabbitMQ
 def start_consumer_loop():
-    asyncio.run(main())  # roda o consumidor async no thread
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(main())  # roda a função async que consome a fila
+
 @app.on_event("startup")
 def startup_event():
     thread = threading.Thread(target=start_consumer_loop, daemon=True)
     thread.start()
+    logging.info("RabbitMQ consumer thread started.")
 
 app.mount("/images", StaticFiles(directory="images"), name="images")
 
