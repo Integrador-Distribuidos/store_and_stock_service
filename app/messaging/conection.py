@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import aio_pika
@@ -11,7 +10,6 @@ AMQP_PORT = os.getenv("RABBITMQ_PORT")
 
 AMQP_URL = f"amqp://{AMQP_USER}:{AMQP_PASSWORD}@{AMQP_HOST}:{AMQP_PORT}/"
 
-
 async def get_connection() -> aio_pika.abc.AbstractRobustConnection:
     """
     Establishes a connection to the AMQP server.
@@ -19,4 +17,4 @@ async def get_connection() -> aio_pika.abc.AbstractRobustConnection:
     """
     logging.info(f"Connecting to AMQP server at {AMQP_URL}")
 
-    return await aio_pika.connect_robust(AMQP_URL, loop=asyncio.get_event_loop())
+    return await aio_pika.connect_robust(AMQP_URL)
