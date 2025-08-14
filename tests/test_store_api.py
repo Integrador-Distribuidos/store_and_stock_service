@@ -15,6 +15,45 @@ def generate_unique_cnpj(suffix_hex: str) -> str:
     suffix_num = int(suffix_hex, 16)
     return f"00.000.000/0001-{suffix_num:02d}"
 
+
+@pytest.fixture
+def new_product_data():
+    unique_id = uuid.uuid4().hex[:6]
+    return {
+        "name": f"Produto Teste {unique_id}",
+        "image": "",
+        "description": "Descrição detalhada",
+        "price": 345,
+        "sku": "SKU qualquer",
+        "category": "Categoria",
+        "quantity": 45,
+        "creation_date": "2025-08-14",
+        "id_stock": 57
+    }
+
+
+@pytest.fixture
+def test_create_store(new_product_data):
+    data = new_product_data
+    created_products = []
+
+    # Cria 300 produtos
+    for i in range(300):
+        # Gera um nome único para cada produto
+        unique_id = uuid.uuid4().hex[:6]
+        data["name"] = f"Produto Teste {unique_id}"
+
+        response = httpx.post(
+            f"{BASE_URL}/api/products/",
+            json=data,  # envia como JSON, não form-data
+            headers=HEADERS
+        )
+        assert response.status_code in (200, 201), f"Falha ao criar produto: {response.text}"
+        created_products.append(response.json())
+
+    return created_products  # retorna lista de produtos criados
+
+
 @pytest.fixture
 def new_store_data():
     unique_id = uuid.uuid4().hex[:6]
@@ -26,6 +65,9 @@ def new_store_data():
         "email": f"teste{unique_id}@loja.com",
         "phone_number": "+5511999999999"
     }
+
+
+
 
 @pytest.fixture
 def create_store(new_store_data):

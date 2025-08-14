@@ -1,8 +1,9 @@
+from httpx import options
 from sqlalchemy.orm import Session
 from app.schemas import stock as schemas
 from app.models import models
 from fastapi import HTTPException
-
+from sqlalchemy.orm import selectinload
 # CRUD de Estoque
 # -----------------------
 
@@ -13,17 +14,6 @@ def create_stock(db: Session, stock: schemas.StockCreate, user_data: dict):
     db.commit()
     db.refresh(db_stock)
     return db_stock
-    db_productstock = models.ProductStock(**stock.model_dump())
-    stock_exists = db.query(models.Stock).filter(models.Stock.id_stock == db_productstock.id_stock).first()
-    product_exists = db.query(models.Product).filter(models.Product.id_product == db_productstock.id_product).first()
-    if not stock_exists:
-        raise HTTPException(status_code=404, detail="Estoque não encontrado!")
-    elif not product_exists:
-        raise HTTPException(status_code=404, detail="Produto não encotrado!")
-    db.add(db_productstock)
-    db.commit()
-    db.refresh(db_productstock)
-    return db_productstock
 
 def get_stock(db: Session, stock_id: int):
     stock = db.query(models.Stock).filter(models.Stock.id_stock == stock_id).first()
@@ -55,8 +45,15 @@ def get_stock(db: Session, stock_id: int):
     )
 
 
+
 def get_all_stocks(db: Session, skip: int = 0, limit: int = 100):
-    stocks = db.query(models.Stock).offset(skip).limit(limit).all()
+    stocks = (
+        db.query(models.Stock)
+        .options(selectinload(models.Stock.products))
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )         
     results = []
 
     for stock in stocks:
