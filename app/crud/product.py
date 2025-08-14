@@ -6,6 +6,8 @@ from app.schemas import product as schemas
 from fastapi import HTTPException, UploadFile, File, Form
 from typing import Optional
 from datetime import date
+from sqlalchemy.orm import selectinload
+
 # -----------------------
 # CRUD de Produto
 # -----------------------
@@ -101,6 +103,7 @@ def get_products_with_userid(db: Session, user_data: dict, skip: int = 0, limit:
 def get_all_products_with_stock(db: Session, skip: int = 0, limit: int = 100):
     products = (
         db.query(models.Product)
+        .options(selectinload(models.Product.stock))
         .offset(skip)
         .limit(limit)
         .all()

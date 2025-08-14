@@ -12,4 +12,3 @@ class RequestLog(Base):
     process_time_ms = Column(Float, nullable=False, comment="Tempo de processamento em milissegundos")
     query_count = Column(Integer, nullable=False, comment="Número de queries SQL executadas")
     created_at = Column(DateTime, default=datetime.utcnow, comment="Timestamp do registro")
-

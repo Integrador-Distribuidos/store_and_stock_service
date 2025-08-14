@@ -24,7 +24,6 @@ Instrumentator().instrument(app).expose(app)
 
 
 #----------------------------------------------------
- 
 
 logger = logging.getLogger("uvicorn")
 logger.setLevel(logging.INFO)

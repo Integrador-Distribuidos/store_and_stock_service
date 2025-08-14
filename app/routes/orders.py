@@ -276,7 +276,7 @@ def finalize_order_logic(id: int, db: Session):
 
     items = db.query(order_item.OrderItem).filter(order_item.OrderItem.id_order == id).all()
     loja = db.query(store.Store).filter(store.Store.id_store == db_order.id_store).first()
-    for item in items:
+    for item in items: #Problema N+1 não resolvido
         product = db.query(models.Product).filter(models.Product.id_product == item.id_product).first()
         if not product:
             raise HTTPException(status_code=404, detail="Produto não encontrado")
